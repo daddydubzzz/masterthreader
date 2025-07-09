@@ -306,15 +306,45 @@ ${script}`;
       console.error('Failed to parse Anthropic JSON response:', error);
       console.log('Raw content:', content);
       
-      // Fallback to simple text parsing if JSON parsing fails
+      // Enhanced fallback parsing that properly formats content with em-dash separators
       const threadSections = content.split(/THREAD\s*\d*:?/i).filter(section => section.trim());
       
-      return threadSections.slice(0, 3).map((section, index) => ({
-        id: `thread-${index + 1}`,
-        content: section.trim(),
-        edits: [],
-        annotations: []
-      }));
+      return threadSections.slice(0, 3).map((section, index) => {
+        // Clean up the section content
+        const cleanContent = section.trim();
+        
+        // Try to identify individual tweets within the section
+        // Try to split by these patterns to find individual tweets
+        let tweets: string[] = [];
+        
+        // First try numbered patterns
+        const numberedSplit = cleanContent.split(/(?=\d+[\.\/]\s*)/);
+        if (numberedSplit.length > 1) {
+          tweets = numberedSplit
+            .map(tweet => tweet.replace(/^\d+[\.\/]\s*/, '').trim())
+            .filter(tweet => tweet.length > 0);
+        } else {
+          // Fallback to paragraph breaks
+          tweets = cleanContent.split(/\n\n+/)
+            .map(tweet => tweet.replace(/^\d+[\.\/\-\–\—]\s*/, '').trim())
+            .filter(tweet => tweet.length > 0);
+        }
+        
+        // If no clear separation found, treat as single tweet
+        if (tweets.length === 0) {
+          tweets = [cleanContent];
+        }
+        
+        // Join tweets with proper em-dash separators
+        const formattedContent = tweets.join('\n\n—\n\n');
+        
+        return {
+          id: `thread-${index + 1}`,
+          content: formattedContent,
+          edits: [],
+          annotations: []
+        };
+      });
     }
   }
 

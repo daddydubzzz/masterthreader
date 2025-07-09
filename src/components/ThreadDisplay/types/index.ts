@@ -3,7 +3,7 @@ import { Thread, Annotation } from '@/types';
 export interface ThreadDisplayProps {
   threads: Thread[];
   onThreadsUpdated: (threads: Thread[]) => void;
-  onRecursionRequested: () => void;
+  onRecursionRequested: () => Promise<void>;
   scriptTitle?: string; // For vector DB context and organization
 }
 
@@ -34,6 +34,6 @@ export interface AnnotationBoxProps {
 
 export interface RecursionButtonProps {
   visible: boolean;
-  onClick: () => void;
+  onClick: () => Promise<void>;
   isLoading?: boolean;
 } 

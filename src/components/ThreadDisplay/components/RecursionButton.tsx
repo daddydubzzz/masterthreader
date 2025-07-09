@@ -1,33 +1,52 @@
 'use client';
 
+import { useState } from 'react';
 import { RecursionButtonProps } from '../types';
 
 export function RecursionButton({ visible, onClick, isLoading = false }: RecursionButtonProps) {
+  const [isProcessing, setIsProcessing] = useState(false);
+
   if (!visible) return null;
+
+  const handleClick = async () => {
+    setIsProcessing(true);
+    try {
+      await onClick();
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const showLoading = isLoading || isProcessing;
 
   return (
     <div className="flex flex-col items-center space-y-4 animate-scale-in">
       {/* Action Prompt */}
       <div className="text-center space-y-2">
-        <h3 className="text-xl font-bold gradient-text">Ready for AI Learning</h3>
+        <h3 className="text-xl font-bold gradient-text">
+          {showLoading ? 'AI Learning in Progress' : 'Ready for AI Learning'}
+        </h3>
         <p className="text-gray-600 max-w-md mx-auto leading-relaxed text-sm">
-          Your edits and feedback will train the AI to better match your writing style and preferences.
+          {showLoading 
+            ? 'Analyzing your edits and feedback to improve future thread generation...'
+            : 'Your edits and feedback will train the AI to better match your writing style and preferences.'
+          }
         </p>
       </div>
 
       {/* Enhanced Button */}
       <div className="relative group">
         <button
-          onClick={onClick}
-          disabled={isLoading}
+          onClick={handleClick}
+          disabled={showLoading}
           className={`relative px-10 py-5 text-lg font-semibold rounded-3xl transition-all duration-300 transform ${
-            isLoading
+            showLoading
               ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
               : 'bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 hover:from-purple-700 hover:via-pink-700 hover:to-red-700 text-white shadow-2xl hover:shadow-purple-500/25 hover:-translate-y-2 active:translate-y-0'
-          } ${!isLoading ? 'group-hover:scale-105' : ''} min-w-[240px]`}
+          } ${!showLoading ? 'group-hover:scale-105' : ''} min-w-[240px]`}
         >
           {/* Multiple background glow effects */}
-          {!isLoading && (
+          {!showLoading && (
             <>
               <div className="absolute -inset-2 bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 rounded-3xl opacity-30 blur-xl group-hover:opacity-60 transition-opacity duration-300"></div>
               <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 rounded-3xl opacity-50 blur-lg group-hover:opacity-80 transition-opacity duration-300"></div>
@@ -36,7 +55,7 @@ export function RecursionButton({ visible, onClick, isLoading = false }: Recursi
           
           {/* Button content */}
           <div className="relative flex items-center justify-center gap-4">
-            {isLoading ? (
+            {showLoading ? (
               <>
                 <div className="relative">
                   <div className="w-6 h-6 spinner"></div>
@@ -64,7 +83,7 @@ export function RecursionButton({ visible, onClick, isLoading = false }: Recursi
         </button>
         
         {/* Success indicators */}
-        {!isLoading && (
+        {!showLoading && (
           <div className="absolute -top-2 -right-2 w-4 h-4 bg-emerald-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-bounce"></div>
         )}
       </div>
@@ -72,7 +91,10 @@ export function RecursionButton({ visible, onClick, isLoading = false }: Recursi
       {/* Helper Text */}
       <div className="text-center max-w-lg mx-auto">
         <p className="text-xs text-gray-500 leading-relaxed">
-          The AI will analyze your modifications and create improved thread variations with enhanced quality and personalization.
+          {showLoading 
+            ? 'The AI is processing your feedback patterns and will return improved thread versions.'
+            : 'The AI will analyze your modifications and create improved thread variations with enhanced quality and personalization.'
+          }
         </p>
       </div>
     </div>

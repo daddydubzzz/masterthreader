@@ -13,50 +13,166 @@ export function useRightPanel(
   const [currentSession, setCurrentSession] = useState<TrainingSession | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Mock data for demonstration
+  // Extract real edits and annotations from threads
   useEffect(() => {
     if (threads && threads.length > 0) {
-      // Mock some suggestions based on thread content
-      const mockSuggestions: MegaPromptSuggestion[] = [
-        {
-          id: 'suggestion-1',
-          type: 'addition',
-          category: 'style',
-          suggestedRule: 'Emphasize emotional hooks in thread openings',
-          reasoning: 'Detected pattern of successful threads starting with emotional elements',
-          basedOnEdits: ['edit-1', 'edit-2'],
-          confidence: 0.85,
-          priority: 'high'
-        },
-        {
-          id: 'suggestion-2',
-          type: 'modification',
-          category: 'core',
-          currentRule: 'Keep threads under 8 tweets',
-          suggestedRule: 'Optimize threads to 6-7 tweets for better engagement',
-          reasoning: 'Analysis shows shorter threads perform better in your style',
-          basedOnEdits: ['edit-3'],
-          confidence: 0.72,
-          priority: 'medium'
-        }
-      ];
-      setSuggestions(mockSuggestions);
+      const captures: EditCapture[] = [];
+      
+      threads.forEach((thread, threadIndex) => {
+        // Capture edits
+        thread.edits.forEach((edit, editIndex) => {
+          captures.push({
+            id: edit.id,
+            timestamp: edit.timestamp,
+            threadId: thread.id,
+            originalText: edit.originalText,
+            editedText: edit.editedText,
+            editType: 'inline',
+            context: `Thread ${threadIndex + 1} - Edit ${editIndex + 1}`,
+            userComment: undefined
+          });
+        });
 
-      // Mock learning patterns
-      const mockPatterns: LearningPattern[] = [
-        {
-          id: 'pattern-1',
-          patternType: 'style',
-          description: 'User prefers conversational tone with direct questions',
-          examples: ['What if I told you...', 'Here\'s the thing...'],
-          confidence: 0.9,
-          frequency: 12,
-          lastSeen: new Date()
-        }
-      ];
-      setLearningPatterns(mockPatterns);
+        // Capture annotations
+        thread.annotations.forEach((annotation) => {
+          captures.push({
+            id: annotation.id,
+            timestamp: annotation.timestamp,
+            threadId: thread.id,
+            originalText: '', // Annotations don't have original text
+            editedText: annotation.text,
+            editType: 'annotation',
+            context: `Thread ${threadIndex + 1} - ${annotation.type} annotation`,
+            userComment: annotation.text
+          });
+        });
+      });
+
+      setEditCaptures(captures);
     }
   }, [threads]);
+
+  // Analyze patterns from RAG database
+  const analyzePatterns = useCallback(async () => {
+    if (!threads || threads.length === 0) return;
+
+    setIsProcessing(true);
+    try {
+      // Get RAG analysis for learning patterns
+      const response = await fetch('/api/analyze-patterns', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.analysis) {
+          // Convert RAG analysis to learning patterns
+          const patterns: LearningPattern[] = [];
+          
+          // Process recurring patterns
+          if (data.analysis.recurring_patterns) {
+            data.analysis.recurring_patterns.forEach((pattern: {
+              original_text: string;
+              latest_edit: string;
+              frequency: number;
+            }, index: number) => {
+              patterns.push({
+                id: `pattern-recurring-${index}`,
+                patternType: 'style',
+                description: `Recurring edit: "${pattern.original_text}" → "${pattern.latest_edit}"`,
+                examples: [pattern.original_text, pattern.latest_edit],
+                confidence: Math.min(pattern.frequency / 10, 1), // Normalize frequency to confidence
+                frequency: pattern.frequency,
+                lastSeen: new Date()
+              });
+            });
+          }
+
+          // Process best examples
+          if (data.analysis.best_examples) {
+            data.analysis.best_examples.slice(0, 3).forEach((example: {
+              original_tweet: string;
+              final_edit: string;
+              annotation: string;
+              quality_rating: number;
+              created_at: string;
+            }, index: number) => {
+              patterns.push({
+                id: `pattern-best-${index}`,
+                patternType: 'engagement',
+                description: `High-quality example: ${example.annotation}`,
+                examples: [example.original_tweet, example.final_edit],
+                confidence: example.quality_rating / 5, // Convert 1-5 rating to 0-1 confidence
+                frequency: 1,
+                lastSeen: new Date(example.created_at)
+              });
+            });
+          }
+
+          setLearningPatterns(patterns);
+        }
+      }
+    } catch (error) {
+      console.error('Error analyzing patterns:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [threads]);
+
+  // Generate suggestions based on edit patterns
+  const generateSuggestions = useCallback(async () => {
+    if (!threads || editCaptures.length === 0) return;
+
+    setIsProcessing(true);
+    try {
+      // Analyze edit patterns to generate suggestions
+      const editPatterns = editCaptures.filter(capture => capture.editType === 'inline');
+      const annotationPatterns = editCaptures.filter(capture => capture.editType === 'annotation');
+
+      const newSuggestions: MegaPromptSuggestion[] = [];
+
+      // Generate suggestions based on frequent edit patterns
+      if (editPatterns.length >= 2) {
+        newSuggestions.push({
+          id: `suggestion-${Date.now()}-1`,
+          type: 'addition',
+          category: 'style',
+          suggestedRule: 'Based on your edits, consider adding more direct language and shorter sentences',
+          reasoning: `Detected ${editPatterns.length} edits that consistently shortened and simplified language`,
+          basedOnEdits: editPatterns.map(e => e.id),
+          confidence: Math.min(editPatterns.length / 5, 1),
+          priority: editPatterns.length >= 3 ? 'high' : 'medium'
+        });
+      }
+
+      // Generate suggestions based on annotation patterns
+      if (annotationPatterns.length >= 1) {
+        const improvementAnnotations = annotationPatterns.filter(a => a.context.includes('improvement'));
+        if (improvementAnnotations.length > 0) {
+          newSuggestions.push({
+            id: `suggestion-${Date.now()}-2`,
+            type: 'modification',
+            category: 'core',
+            currentRule: 'Create engaging Twitter threads',
+            suggestedRule: 'Focus on improvement-based feedback patterns you\'ve identified',
+            reasoning: `Your improvement annotations suggest focusing on ${improvementAnnotations[0].userComment?.slice(0, 50)}...`,
+            basedOnEdits: improvementAnnotations.map(a => a.id),
+            confidence: 0.8,
+            priority: 'high'
+          });
+        }
+      }
+
+      setSuggestions(newSuggestions);
+    } catch (error) {
+      console.error('Error generating suggestions:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [threads, editCaptures]);
 
   // Event handlers
   const captureEdit = useCallback((edit: Omit<EditCapture, 'id' | 'timestamp'>) => {
@@ -71,31 +187,43 @@ export function useRightPanel(
   const processThreadAnnotations = useCallback(async (threadsToProcess: Thread[]) => {
     setIsProcessing(true);
     try {
-      // Mock processing delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Process each thread's annotations for RAG capture
+      for (const thread of threadsToProcess) {
+        for (const annotation of thread.annotations) {
+          // Find matching edit for this annotation (within 30 seconds)
+          const matchingEdit = thread.edits.find(edit => 
+            Math.abs(edit.timestamp.getTime() - annotation.timestamp.getTime()) < 30000
+          );
+
+          if (matchingEdit) {
+            // Capture complete vector triple in RAG database
+            await fetch('/api/capture-edit', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                original_tweet: matchingEdit.originalText,
+                annotation: annotation.text,
+                final_edit: matchingEdit.editedText,
+                script_title: originalScript ? originalScript.slice(0, 50) : undefined,
+                position_in_thread: 0,
+                quality_rating: 4, // High quality from manual annotation
+                resolved: false,
+              }),
+            });
+          }
+        }
+      }
       
-      // Mock processing results
-      console.log('Processing threads for annotations:', threadsToProcess.length);
-      
+      // After processing, analyze patterns
+      await analyzePatterns();
     } catch (error) {
       console.error('Error processing thread annotations:', error);
     } finally {
       setIsProcessing(false);
     }
-  }, []);
-
-  const generateSuggestions = useCallback(async () => {
-    setIsProcessing(true);
-    try {
-      // Mock suggestion generation
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log('Generated new suggestions based on patterns');
-    } catch (error) {
-      console.error('Error generating suggestions:', error);
-    } finally {
-      setIsProcessing(false);
-    }
-  }, []);
+  }, [originalScript, analyzePatterns]);
 
   const applyPattern = useCallback((patternId: string) => {
     console.log('Applying pattern:', patternId);
@@ -116,24 +244,40 @@ export function useRightPanel(
     const newSession: TrainingSession = {
       id: `session-${Date.now()}`,
       startTime: new Date(),
-      editsCount: 0,
-      patternsIdentified: 0,
-      suggestionsGenerated: 0,
+      editsCount: editCaptures.length,
+      patternsIdentified: learningPatterns.length,
+      suggestionsGenerated: suggestions.length,
       scriptsProcessed: originalScript ? [originalScript] : []
     };
     setCurrentSession(newSession);
-  }, [originalScript]);
+    
+    // Start processing and analysis
+    if (threads && threads.length > 0) {
+      processThreadAnnotations(threads);
+      generateSuggestions();
+    }
+  }, [originalScript, editCaptures.length, learningPatterns.length, suggestions.length, threads, processThreadAnnotations, generateSuggestions]);
 
   const endTrainingSession = useCallback(() => {
     if (currentSession) {
       const updatedSession = {
         ...currentSession,
-        endTime: new Date()
+        endTime: new Date(),
+        editsCount: editCaptures.length,
+        patternsIdentified: learningPatterns.length,
+        suggestionsGenerated: suggestions.length,
       };
       setCurrentSession(null);
       console.log('Training session ended:', updatedSession);
     }
-  }, [currentSession]);
+  }, [currentSession, editCaptures.length, learningPatterns.length, suggestions.length]);
+
+  // Auto-analyze patterns when threads change
+  useEffect(() => {
+    if (threads && threads.length > 0 && editCaptures.length > 0) {
+      analyzePatterns();
+    }
+  }, [threads, editCaptures, analyzePatterns]);
 
   return {
     editCaptures,

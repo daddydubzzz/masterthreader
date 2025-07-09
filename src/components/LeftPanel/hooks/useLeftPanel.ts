@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { UseLeftPanelReturn, MegaPromptItem } from '../types';
 
 export function useLeftPanel(
@@ -9,16 +9,15 @@ export function useLeftPanel(
   const [isEditing, setIsEditing] = useState(false);
   const [editingMegaPrompt, setEditingMegaPrompt] = useState<MegaPromptItem | undefined>();
 
-  // Mock data - in real app, this would come from API/database
+  // Real data - these are the actual megaprompt components that exist
   const [megaPrompts, setMegaPrompts] = useState<MegaPromptItem[]>([
     {
       id: 'core',
-      name: 'Core Megaprompt',
+      name: 'Core Instructions',
       description: 'Primary thread generation logic and formatting rules',
       isActive: true,
       category: 'core',
-      lastModified: new Date('2024-01-15'),
-      version: '2.1'
+      content: 'Loading...'
     },
     {
       id: 'style',
@@ -26,17 +25,7 @@ export function useLeftPanel(
       description: 'Writing style, tone, and voice guidelines',
       isActive: true,
       category: 'style',
-      lastModified: new Date('2024-01-10'),
-      version: '1.8'
-    },
-    {
-      id: 'advanced',
-      name: 'Advanced Rules',
-      description: 'Advanced formatting and engagement optimization',
-      isActive: false,
-      category: 'advanced',
-      lastModified: new Date('2024-01-05'),
-      version: '1.2'
+      content: 'Loading...'
     },
     {
       id: 'examples',
@@ -44,10 +33,58 @@ export function useLeftPanel(
       description: 'High-performing thread examples and patterns',
       isActive: true,
       category: 'examples',
-      lastModified: new Date('2024-01-12'),
-      version: '3.0'
+      content: 'Loading...'
+    },
+    {
+      id: 'advanced',
+      name: 'Advanced Rules',
+      description: 'Advanced formatting and engagement optimization',
+      isActive: true,
+      category: 'advanced',
+      content: 'Loading...'
     }
   ]);
+
+  // Load actual content from files
+  useEffect(() => {
+    const loadMegaPromptContent = async () => {
+      const fileMap = {
+        'core': 'megaprompt-core.txt',
+        'style': 'megaprompt-style-rules.txt',
+        'examples': 'megaprompt-examples.txt',
+        'advanced': 'megaprompt-advanced-rules.txt'
+      };
+
+      for (const [id, filename] of Object.entries(fileMap)) {
+        try {
+          const response = await fetch(`/${filename}`);
+          if (response.ok) {
+            const content = await response.text();
+            setMegaPrompts(prev => 
+              prev.map(mp => 
+                mp.id === id ? { ...mp, content } : mp
+              )
+            );
+          } else {
+            setMegaPrompts(prev => 
+              prev.map(mp => 
+                mp.id === id ? { ...mp, content: 'Failed to load content' } : mp
+              )
+            );
+          }
+        } catch (error) {
+          console.error(`Error loading ${filename}:`, error);
+          setMegaPrompts(prev => 
+            prev.map(mp => 
+              mp.id === id ? { ...mp, content: 'Error loading content' } : mp
+            )
+          );
+        }
+      }
+    };
+
+    loadMegaPromptContent();
+  }, []);
 
   // Get active megaprompts that will be used for generation
   const activeMegaPrompts = useMemo(() => 
@@ -71,9 +108,7 @@ export function useLeftPanel(
       // Add new megaprompt
       const newMegaPrompt = {
         ...megaPrompt,
-        id: `custom-${Date.now()}`,
-        lastModified: new Date(),
-        version: '1.0'
+        id: `custom-${Date.now()}`
       };
       setMegaPrompts(prev => [...prev, newMegaPrompt]);
       onMegaPromptChange?.(newMegaPrompt);
@@ -81,9 +116,7 @@ export function useLeftPanel(
       // Update existing megaprompt
       const updatedMegaPrompt = {
         ...megaPrompt,
-        id: editingMegaPrompt.id,
-        lastModified: new Date(),
-        version: editingMegaPrompt.version || '1.0'
+        id: editingMegaPrompt.id
       };
       setMegaPrompts(prev => 
         prev.map(mp => mp.id === editingMegaPrompt.id ? updatedMegaPrompt : mp)
@@ -101,7 +134,7 @@ export function useLeftPanel(
     setMegaPrompts(prev => 
       prev.map(mp => 
         mp.id === id 
-          ? { ...mp, isActive: !mp.isActive, lastModified: new Date() }
+          ? { ...mp, isActive: !mp.isActive }
           : mp
       )
     );

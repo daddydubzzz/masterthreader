@@ -6,8 +6,6 @@ export interface MegaPromptItem {
   isActive: boolean;
   category: 'core' | 'style' | 'advanced' | 'examples';
   content?: string;
-  lastModified?: Date;
-  version?: string;
 }
 
 // Main LeftPanel props
@@ -20,6 +18,7 @@ export interface MegaPromptCardProps {
   megaPrompt: MegaPromptItem;
   onEdit?: () => void;
   onToggleActive?: () => void;
+  isReadOnly?: boolean;
 }
 
 export interface MegaPromptFormProps {

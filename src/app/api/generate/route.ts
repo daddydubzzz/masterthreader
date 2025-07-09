@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createLLMClient } from '@/lib/llm';
-import { getMegaPrompt, loadMegaPromptFromFile } from '@/lib/megaPrompts';
+import { getMegaPrompt } from '@/lib/megaPrompts';
+import { loadMegaPromptFromFile } from '@/lib/megaPromptServer';
 import { getContextualExamples } from '@/lib/vectorDB';
 import { GenerationRequest, GenerationResponse } from '@/types';
 

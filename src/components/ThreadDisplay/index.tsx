@@ -18,42 +18,6 @@ export function ThreadDisplay({
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      {/* Header */}
-      <header className="text-center mb-16 animate-slide-up">
-        <div className="max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <div className="text-left">
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold gradient-text tracking-tight text-balance">
-                Generated Threads
-              </h1>
-              <div className="flex items-center gap-2 mt-2">
-                <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                <span className="text-sm font-medium text-gray-500">{threads.length} variations ready</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="space-y-4">
-            <p className="text-xl text-gray-700 leading-relaxed text-balance">
-              Your content has been transformed into <span className="font-semibold text-gray-900">{threads.length} optimized thread variations</span>.
-              Click any tweet to edit, or add comments to guide the AI.
-            </p>
-            
-            {hasEditsOrAnnotations && (
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-full text-amber-700 font-medium text-sm animate-fade-in">
-                <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
-                Changes detected - run recursion to improve threads
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
-
       {/* Thread Grid */}
       <div className="space-y-8 mb-16">
         {threads.map((thread, index) => (

@@ -72,42 +72,6 @@ export function getLatestMegaPrompt(): MegaPrompt {
   return allVersions[latestVersion];
 }
 
-// Server-side function to load mega prompt from modular files
-export function loadMegaPromptFromFile(): string {
-  // Only use this function on server side
-  if (typeof window !== 'undefined') {
-    console.warn('loadMegaPromptFromFile should only be called on server side');
-    return DEFAULT_MEGA_PROMPT_CONTENT;
-  }
-
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { readFileSync } = require('fs');
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { join } = require('path');
-    
-    // Try to load from modular files first
-    try {
-      const coreInstructions = readFileSync(join(process.cwd(), 'megaprompt-core.txt'), 'utf-8');
-      const styleRules = readFileSync(join(process.cwd(), 'megaprompt-style-rules.txt'), 'utf-8');
-      const examples = readFileSync(join(process.cwd(), 'megaprompt-examples.txt'), 'utf-8');
-      const advancedRules = readFileSync(join(process.cwd(), 'megaprompt-advanced-rules.txt'), 'utf-8');
-      
-      // Combine them in logical order
-      return [coreInstructions, styleRules, examples, advancedRules].join('\n\n');
-    } catch {
-      console.warn('Modular mega prompt files not found, falling back to megaprompt.txt');
-      
-      // Fallback to original single file
-      const megaPromptPath = join(process.cwd(), 'megaprompt.txt');
-      return readFileSync(megaPromptPath, 'utf8');
-    }
-  } catch (error) {
-    console.error('Failed to load mega prompt from any source:', error);
-    return DEFAULT_MEGA_PROMPT_CONTENT;
-  }
-}
-
 // Create new mega prompt version with additional rules
 export function createNewMegaPromptVersion(
   baseMegaPrompt: MegaPrompt,

@@ -1,91 +1,70 @@
 'use client';
 
+import { useState } from 'react';
 import { MegaPromptCardProps } from '../types';
 
 export function MegaPromptCard({ 
   megaPrompt, 
   onEdit,
-  onToggleActive 
+  onToggleActive,
+  isReadOnly = false
 }: MegaPromptCardProps) {
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'core': return 'bg-blue-50 text-blue-700 border-blue-200';
-      case 'style': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-      case 'advanced': return 'bg-purple-50 text-purple-700 border-purple-200';
-      case 'examples': return 'bg-amber-50 text-amber-700 border-amber-200';
-      default: return 'bg-gray-50 text-gray-700 border-gray-200';
-    }
-  };
-
-  const formatDate = (date?: Date) => {
-    if (!date) return '';
-    return new Intl.DateTimeFormat('en-US', { 
-      month: 'short', 
-      day: 'numeric' 
-    }).format(date);
-  };
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <div
-      className={`card-hover p-4 rounded-xl border transition-all duration-200 group ${
-        megaPrompt.isActive 
-          ? 'border-emerald-300 bg-emerald-50' 
-          : 'border-gray-200 bg-white opacity-60'
-      }`}
-    >
+    <div className="border border-gray-200 rounded-xl bg-white transition-all duration-200">
       {/* Header */}
-      <div className="flex items-start justify-between mb-3">
-        <h3 className="font-medium text-gray-900 text-sm">{megaPrompt.name}</h3>
-        <div className="flex items-center gap-2">
-          {megaPrompt.isActive && (
-            <div className="w-2 h-2 bg-emerald-500 rounded-full" title="Active - Will be used in generation"></div>
-          )}
-          <span className={`px-2 py-1 text-xs rounded-full border ${getCategoryColor(megaPrompt.category)}`}>
-            {megaPrompt.category}
-          </span>
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full p-4 text-left hover:bg-gray-50 transition-colors"
+      >
+        <div className="flex items-center justify-between">
+          <h3 className="font-medium text-gray-900 text-sm">{megaPrompt.name}</h3>
+          <div className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}>
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-gray-400">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
         </div>
-      </div>
+        <p className="text-xs text-gray-600 mt-1">{megaPrompt.description}</p>
+      </button>
 
-      {/* Description */}
-      <p className="text-xs text-gray-600 leading-relaxed mb-3">{megaPrompt.description}</p>
+      {/* Expandable Content */}
+      {isExpanded && (
+        <div className="border-t border-gray-100 p-4 bg-gray-50">
+          <div className="text-xs text-gray-700 font-mono whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto">
+            {megaPrompt.content || 'Loading content...'}
+          </div>
+        </div>
+      )}
 
-      {/* Footer */}
-      <div className="flex items-center justify-between text-xs text-gray-500">
-        <div className="flex items-center gap-2">
-          {megaPrompt.version && (
-            <span className="bg-gray-100 px-2 py-1 rounded">v{megaPrompt.version}</span>
-          )}
-          {megaPrompt.lastModified && (
-            <span>{formatDate(megaPrompt.lastModified)}</span>
-          )}
+      {/* Action buttons - only show if not read-only */}
+      {!isReadOnly && isExpanded && (
+        <div className="border-t border-gray-100 p-3 bg-gray-50">
+          <div className="flex items-center gap-2">
+            {onEdit && (
+              <button
+                onClick={onEdit}
+                className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+              >
+                Edit
+              </button>
+            )}
+            {onToggleActive && (
+              <button
+                onClick={onToggleActive}
+                className={`px-3 py-1 text-xs rounded transition-colors ${
+                  megaPrompt.isActive
+                    ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                    : 'bg-green-100 text-green-700 hover:bg-green-200'
+                }`}
+              >
+                {megaPrompt.isActive ? 'Deactivate' : 'Activate'}
+              </button>
+            )}
+          </div>
         </div>
-        
-        {/* Action buttons */}
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          {onEdit && (
-            <button
-              onClick={onEdit}
-              className="p-1 hover:bg-gray-100 rounded"
-              title="Edit megaprompt"
-            >
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-            </button>
-          )}
-          {onToggleActive && (
-            <button
-              onClick={onToggleActive}
-              className="p-1 hover:bg-gray-100 rounded"
-              title={megaPrompt.isActive ? "Deactivate" : "Activate"}
-            >
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </button>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 } 

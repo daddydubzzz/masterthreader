@@ -18,7 +18,6 @@ export default function Home() {
               </div>
               <div>
                 <h1 className="text-xl font-semibold gradient-text tracking-tight">MasterThreader</h1>
-                <span className="text-xs text-gray-500 font-medium">AI Copy Refinement Engine</span>
               </div>
             </div>
           </div>
