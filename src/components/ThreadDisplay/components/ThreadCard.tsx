@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ThreadCardProps } from '../types';
 import { Tweet } from './Tweet';
+import { Edit, Annotation } from '@/types';
 
 export function ThreadCard({ thread, threadIndex, onThreadUpdated }: ThreadCardProps) {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -21,23 +22,39 @@ export function ThreadCard({ thread, threadIndex, onThreadUpdated }: ThreadCardP
                      `Thread ${threadIndex + 1}`;
 
   const handleTweetEdit = (tweetIndex: number, newContent: string) => {
+    const originalContent = tweets[tweetIndex];
+    
+    if (originalContent === newContent) {
+      setEditingTweetIndex(null);
+      return;
+    }
+
     const updatedTweets = [...tweets];
     updatedTweets[tweetIndex] = newContent;
     
     // Rejoin with proper em-dash separators
     const updatedContent = updatedTweets.join('\n\n—\n\n');
     
+    // Create proper Edit object with timestamp
+    const newEdit: Edit = {
+      id: `edit-${Date.now()}-${Math.random()}`,
+      originalText: originalContent,
+      editedText: newContent,
+      timestamp: new Date()
+    };
+    
     const updatedThread = {
       ...thread,
-      content: updatedContent
+      content: updatedContent,
+      edits: [...thread.edits, newEdit]
     };
     
     onThreadUpdated(updatedThread);
     setEditingTweetIndex(null);
   };
 
-  const handleAnnotationAdd = (annotation: string, type: 'improvement' | 'clarification' | 'style') => {
-    const newAnnotation = {
+  const handleAnnotationAdd = (annotation: string, type: Annotation['type']) => {
+    const newAnnotation: Annotation = {
       id: `annotation-${Date.now()}-${Math.random()}`,
       text: annotation,
       type,

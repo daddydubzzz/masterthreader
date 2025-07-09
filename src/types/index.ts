@@ -102,6 +102,16 @@ export interface RecursionPayload {
   originalScript: string;
   threads: Thread[];
   megaPromptVersion: string;
+  ragContext?: {
+    contextualExamples: Array<{
+      original: string;
+      annotation: string;
+      improved: string;
+    }>;
+    patternContext: string;
+    recurringContext: string;
+    editsAndAnnotations: string;
+  };
 }
 
 export interface RecursionResponse {

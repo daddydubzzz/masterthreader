@@ -4,18 +4,26 @@ import { getMegaPrompt } from '@/lib/megaPrompts';
 import { loadMegaPromptFromFile } from '@/lib/megaPromptServer';
 import { getContextualExamples } from '@/lib/vectorDB';
 import { GenerationRequest, GenerationResponse } from '@/types';
+import { ValidationError, validateRequired, validateStringLength, ErrorLogger } from '@/lib/errorHandling';
 
 export async function POST(request: NextRequest) {
   try {
     const body: GenerationRequest = await request.json();
     const { script, megaPromptVersion } = body;
 
-    // Validate input
-    if (!script || !script.trim()) {
-      return NextResponse.json(
-        { error: 'Script is required' },
-        { status: 400 }
-      );
+    // Validate input with comprehensive validation
+    try {
+      validateRequired(script, 'Script');
+      validateStringLength(script.trim(), 'Script', 10000); // Maximum 10k characters
+      validateRequired(megaPromptVersion, 'Mega prompt version');
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        return NextResponse.json(
+          { error: error.message },
+          { status: 400 }
+        );
+      }
+      throw error;
     }
 
     // Get the specified mega prompt version
@@ -80,7 +88,10 @@ Use these examples to understand Josh's preferences and create better first-pass
     return NextResponse.json(response);
 
   } catch (error) {
-    console.error('Generation error:', error);
+    ErrorLogger.logError(
+      error instanceof Error ? error : new Error(String(error)),
+      { operation: 'generation' }
+    );
     
     // Check if it's an API key error
     if (error instanceof Error && error.message.includes('API key')) {

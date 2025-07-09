@@ -2,37 +2,40 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createLLMClient } from '@/lib/llm';
 import { getContextualExamples, findSimilarTriples, captureVectorTriple } from '@/lib/vectorDB';
 import { RecursionPayload } from '@/types';
+import { findEditAnnotationPairs, createVectorTripleFromPair } from '@/lib/temporalPairing';
+import { ValidationError, ErrorLogger, AsyncHandler } from '@/lib/errorHandling';
 
 export async function POST(request: NextRequest) {
   try {
     const payload: RecursionPayload = await request.json();
     const { originalScript, threads } = payload;
 
-    // Validate input
-    if (!originalScript || !originalScript.trim()) {
-      return NextResponse.json(
-        { error: 'Original script is required' },
-        { status: 400 }
-      );
-    }
+    // Validate input using standardized validation
+    try {
+      if (!originalScript || !originalScript.trim()) {
+        throw new ValidationError('Original script is required');
+      }
 
-    if (!threads || threads.length === 0) {
-      return NextResponse.json(
-        { error: 'Threads are required' },
-        { status: 400 }
-      );
-    }
+      if (!threads || threads.length === 0) {
+        throw new ValidationError('Threads are required');
+      }
 
-    // Check if there are any edits or annotations to learn from
-    const hasEditsFeedback = threads.some(thread => 
-      thread.edits.length > 0 || thread.annotations.length > 0
-    );
-
-    if (!hasEditsFeedback) {
-      return NextResponse.json(
-        { error: 'No edits or annotations found to learn from' },
-        { status: 400 }
+      // Check if there are any edits or annotations to learn from
+      const hasEditsFeedback = threads.some(thread => 
+        thread.edits.length > 0 || thread.annotations.length > 0
       );
+
+      if (!hasEditsFeedback) {
+        throw new ValidationError('No edits or annotations found to learn from');
+      }
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        return NextResponse.json(
+          { error: error.message },
+          { status: 400 }
+        );
+      }
+      throw error;
     }
 
     // Extract script title from the first few words for context
@@ -43,17 +46,24 @@ export async function POST(request: NextRequest) {
     const allAnnotations = threads.flatMap(thread => thread.annotations);
 
     // Get contextual examples from RAG system for better recursion
-    // TODO: Use contextual examples to enhance recursion prompts
+    let contextualExamples: Array<{
+      original: string;
+      annotation: string;
+      improved: string;
+    }> = [];
     try {
-      await getContextualExamples(originalScript, 5);
-      // Will be used in enhanced recursion implementation
+      const examples = await getContextualExamples(originalScript, 5);
+      contextualExamples = examples.map(example => ({
+        original: example.original_tweet,
+        annotation: example.annotation,
+        improved: example.final_edit
+      }));
     } catch (error) {
       console.warn('Failed to get contextual examples for recursion:', error);
     }
 
     // Find similar patterns for each edit to provide context
-    // TODO: Use this pattern analysis to enhance recursion prompts
-    await Promise.all(
+    const patternAnalysis = await Promise.all(
       allEdits.slice(0, 3).map(async (edit) => { // Limit to first 3 edits for performance
         try {
           const similarTriples = await findSimilarTriples({
@@ -74,91 +84,96 @@ export async function POST(request: NextRequest) {
       })
     );
 
-    // Get comprehensive pattern analysis (for future enhancement)
-    // let recurringIssues: Array<{
-    //   original_text: string;
-    //   frequency: number;
-    //   latest_edit: string;
-    //   suggestions: string[];
-    // }> = [];
+    // Get comprehensive pattern analysis from RAG system
+    let recurringIssues: Array<{
+      original_tweet: string;
+      frequency: number;
+      best_example: any;
+      common_annotations: string[];
+    }> = [];
 
-    // try {
-    //   const analysis = await analyzeEditingPatterns();
-    //   recurringIssues = analysis.recurring_issues;
-    // } catch (error) {
-    //   console.warn('Failed to get pattern analysis:', error);
-    // }
+    try {
+      const { getRecurringPatterns } = await import('@/lib/vectorDB');
+      recurringIssues = await getRecurringPatterns(5);
+    } catch (error) {
+      console.warn('Failed to get recurring patterns:', error);
+    }
 
-    // Build enriched context for LLM (for future enhanced recursion implementation)
-    // const editsAndAnnotations = threads
-    //   .map(thread => {
-    //     const edits = thread.edits.map(edit => 
-    //       `Edit: "${edit.originalText}" → "${edit.editedText}"`
-    //     ).join('\n');
-    //     
-    //     const annotations = thread.annotations.map(annotation =>
-    //       `${annotation.type.toUpperCase()}: ${annotation.text}`
-    //     ).join('\n');
-    //     
-    //     return `Thread ${thread.id}:\n${edits}\n${annotations}`;
-    //   })
-    //   .join('\n\n');
+    // Build enriched context for LLM enhanced recursion implementation
+    const editsAndAnnotations = threads
+      .map(thread => {
+        const edits = thread.edits.map(edit => 
+          `Edit: "${edit.originalText}" → "${edit.editedText}"`
+        ).join('\n');
+        
+        const annotations = thread.annotations.map(annotation =>
+          `${annotation.type.toUpperCase()}: ${annotation.text}`
+        ).join('\n');
+        
+        return `Thread ${thread.id}:\n${edits}\n${annotations}`;
+      })
+      .join('\n\n');
 
-    // Build pattern context from similar examples (for future enhancement)
-    // const patternContext = patternAnalysis
-    //   .filter(item => item.similarPatterns.length > 0)
-    //   .map(item => {
-    //     const patterns = item.similarPatterns
-    //       .map(sp => `  Similar: "${sp.pattern.original_text}" → "${sp.pattern.edit_text}" (${sp.pattern.annotation_text || 'no annotation'})`)
-    //       .join('\n');
-    //     
-    //     return `Edit: "${item.edit.originalText}" → "${item.edit.editedText}"\nSimilar patterns from Josh's history:\n${patterns}`;
-    //   })
-    //   .join('\n\n');
+    // Build pattern context from similar examples
+    const patternContext = patternAnalysis
+      .filter(item => item.similarExamples.length > 0)
+      .map(item => {
+        const patterns = item.similarExamples
+          .map(example => `  Similar: "${example.original_tweet}" → "${example.final_edit}" (${example.annotation || 'no annotation'})`)
+          .join('\n');
+        
+        return `Edit: "${item.edit.originalText}" → "${item.edit.editedText}"\nSimilar patterns from history:\n${patterns}`;
+      })
+      .join('\n\n');
 
-    // Build recurring issues context (for future enhancement)
-    // const recurringContext = recurringIssues.length > 0 
-    //   ? `\n\nRECURRING ISSUES JOSH FREQUENTLY FIXES:\n${
-    //       recurringIssues.slice(0, 5).map(issue => 
-    //         `- "${issue.original_text}" (appears ${issue.frequency}x) → suggests: ${issue.suggestions.join(', ')}`
-    //       ).join('\n')
-    //     }`
-    //   : '';
+    // Build recurring issues context
+    const recurringContext = recurringIssues.length > 0 
+      ? `\n\nRECURRING ISSUES FREQUENTLY EDITED:\n${
+          recurringIssues.slice(0, 5).map(issue => 
+            `- "${issue.original_tweet}" (appears ${issue.frequency}x) → common annotations: ${issue.common_annotations.slice(0, 2).join(', ')}`
+          ).join('\n')
+        }`
+      : '';
 
-    // TODO: Implement enhanced recursion that uses the pattern analysis data
-    // For now, we collect and store the patterns but use the standard LLM interface
-    // Future enhancement: Pass pattern context to a custom recursion prompt
-
-    // Perform enhanced recursion using pluggable LLM backend
+    // Perform enhanced recursion using pluggable LLM backend with RAG context
     const llmClient = createLLMClient();
-    const response = await llmClient.performRecursion({
+    
+    // Create enhanced recursion payload with RAG context
+    const enhancedPayload = {
       originalScript,
       threads,
-      megaPromptVersion: payload.megaPromptVersion
-    });
+      megaPromptVersion: payload.megaPromptVersion,
+      ragContext: {
+        contextualExamples,
+        patternContext,
+        recurringContext,
+        editsAndAnnotations
+      }
+    };
+    
+    const response = await llmClient.performRecursion(enhancedPayload);
 
     // Store vector triples from recursion session for future learning
     try {
-      // Capture each edit with paired annotation as complete vector triple
-      const capturePromises = allEdits.map((edit, index) => {
-        const pairedAnnotation = allAnnotations.find(ann => 
-          Math.abs(ann.timestamp.getTime() - edit.timestamp.getTime()) < 30000 // within 30 seconds
+      // Use robust temporal pairing to find edit-annotation pairs
+      const editAnnotationPairs = findEditAnnotationPairs(allEdits, allAnnotations, {
+        timeWindowMs: 30000, // 30 seconds
+        maxPairs: 20 // Reasonable limit for recursion session
+      });
+
+      // Capture each paired edit-annotation as complete vector triple
+      const capturePromises = editAnnotationPairs.map((pair, index) => {
+        const vectorTriple = createVectorTripleFromPair(
+          pair,
+          scriptTitle,
+          Math.floor(index / threads.length)
         );
 
-        // Only capture if we have annotation (complete vector triple)
-        if (pairedAnnotation) {
-          return captureVectorTriple({
-            original_tweet: edit.originalText,
-            annotation: pairedAnnotation.text,
-            final_edit: edit.editedText,
-            script_title: scriptTitle,
-            position_in_thread: Math.floor(index / threads.length),
-            quality_rating: 4, // Higher rating for recursion session edits
-            resolved: false,
-          });
-        }
-        return Promise.resolve();
-      }).filter(Boolean); // Remove empty promises
+        return captureVectorTriple({
+          ...vectorTriple,
+          quality_rating: 4, // Higher rating for recursion session edits
+        });
+      });
 
       await Promise.all(capturePromises);
     } catch (error) {
@@ -169,7 +184,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response);
 
   } catch (error) {
-    console.error('Recursion error:', error);
+    ErrorLogger.logError(
+      error instanceof Error ? error : new Error(String(error)),
+      { operation: 'recursion' }
+    );
     
     // Check if it's an API key error
     if (error instanceof Error && error.message.includes('API key')) {

@@ -1,35 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { captureVectorTriple } from '@/lib/vectorDB';
 import { VectorTriple } from '@/types';
+import { ValidationError, validateRequired, validateStringLength, validatePositiveNumber, ErrorLogger } from '@/lib/errorHandling';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // Validate required fields for vector triple
-    if (!body.original_tweet || !body.annotation || !body.final_edit) {
-      return NextResponse.json(
-        { error: 'original_tweet, annotation, and final_edit are required' },
-        { status: 400 }
-      );
-    }
-
-    // Validate text lengths (reasonable limits)
-    if (body.original_tweet.length > 5000 || 
-        body.annotation.length > 5000 || 
-        body.final_edit.length > 5000) {
-      return NextResponse.json(
-        { error: 'Text length exceeds maximum limit (5000 characters)' },
-        { status: 400 }
-      );
-    }
-
-    // Validate quality rating if provided
-    if (body.quality_rating && (body.quality_rating < 1 || body.quality_rating > 5)) {
-      return NextResponse.json(
-        { error: 'quality_rating must be between 1 and 5' },
-        { status: 400 }
-      );
+    // Validate required fields and constraints with comprehensive validation
+    try {
+      validateRequired(body.original_tweet, 'original_tweet');
+      validateRequired(body.annotation, 'annotation');
+      validateRequired(body.final_edit, 'final_edit');
+      
+      validateStringLength(body.original_tweet, 'original_tweet', 5000);
+      validateStringLength(body.annotation, 'annotation', 5000);
+      validateStringLength(body.final_edit, 'final_edit', 5000);
+      
+      if (body.quality_rating !== undefined) {
+        if (typeof body.quality_rating !== 'number' || body.quality_rating < 1 || body.quality_rating > 5) {
+          throw new ValidationError('quality_rating must be a number between 1 and 5');
+        }
+      }
+      
+      if (body.position_in_thread !== undefined) {
+        if (typeof body.position_in_thread !== 'number' || body.position_in_thread < 0) {
+          throw new ValidationError('position_in_thread must be a non-negative number');
+        }
+      }
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        return NextResponse.json(
+          { error: error.message },
+          { status: 400 }
+        );
+      }
+      throw error;
     }
 
     // Create vector triple from request body
@@ -53,7 +59,10 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Capture vector triple error:', error);
+    ErrorLogger.logError(
+      error instanceof Error ? error : new Error(String(error)),
+      { operation: 'capture-edit' }
+    );
     
     // Handle specific database errors
     if (error instanceof Error) {
@@ -114,7 +123,10 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Get vector triples error:', error);
+    ErrorLogger.logError(
+      error instanceof Error ? error : new Error(String(error)),
+      { operation: 'get-vector-triples' }
+    );
     
     return NextResponse.json(
       { error: 'Failed to retrieve vector triples' },

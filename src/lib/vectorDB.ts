@@ -1,5 +1,6 @@
 import { Pool } from 'pg';
 import { VectorTriple, VectorTripleQuery, SimilarTriple, RAGAnalysis } from '@/types';
+import { DatabaseError, ConfigurationError, ErrorLogger, AsyncHandler } from './errorHandling';
 
 // Database connection pool
 let pool: Pool | null = null;
@@ -7,11 +8,19 @@ let pool: Pool | null = null;
 function getDBPool(): Pool {
   if (!pool) {
     if (!process.env.DATABASE_URL) {
-      throw new Error('DATABASE_URL not configured - vector DB unavailable');
+      throw new ConfigurationError('DATABASE_URL not configured - vector DB unavailable');
     }
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      max: 20, // Maximum number of connections
+      idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
+      connectionTimeoutMillis: 2000, // Return error after 2 seconds if connection could not be established
+    });
+    
+    // Handle pool errors
+    pool.on('error', (err) => {
+      ErrorLogger.logError(new DatabaseError('Database pool error', { error: err.message }));
     });
   }
   return pool;
@@ -20,6 +29,10 @@ function getDBPool(): Pool {
 // Generate embeddings using OpenAI
 async function generateEmbedding(text: string): Promise<number[]> {
   try {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new ConfigurationError('OpenAI API key not configured');
+    }
+
     const OpenAI = (await import('openai')).default;
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
@@ -32,57 +45,67 @@ async function generateEmbedding(text: string): Promise<number[]> {
 
     return response.data[0].embedding;
   } catch (error) {
-    console.error('Failed to generate embedding:', error);
-    throw new Error('Embedding generation failed');
+    ErrorLogger.logError(
+      error instanceof Error ? error : new Error(String(error)),
+      { operation: 'generateEmbedding', textLength: text.length }
+    );
+    throw error;
   }
 }
 
 // Store a vector triple in the RAG database
 export async function captureVectorTriple(triple: VectorTriple): Promise<string> {
-  try {
-    // Check if database is configured
-    if (!process.env.DATABASE_URL) {
-      console.warn('DATABASE_URL not configured - vector triple not captured');
-      return 'no-db-mock-id';
+  return AsyncHandler.handleWithFallback(
+    async () => {
+      // Check if database is configured
+      if (!process.env.DATABASE_URL) {
+        throw new ConfigurationError('DATABASE_URL not configured - vector triple not captured');
+      }
+
+      const pool = getDBPool();
+      
+      // Generate embedding from the full triple context
+      const embeddingText = `${triple.original_tweet} ${triple.annotation} ${triple.final_edit}`.trim();
+      const embedding = await generateEmbedding(embeddingText);
+
+      const query = `
+        INSERT INTO vector_triples (
+          original_tweet,
+          annotation,
+          final_edit,
+          script_title,
+          position_in_thread,
+          embedding_vector,
+          quality_rating,
+          resolved
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING id
+      `;
+
+      const values = [
+        triple.original_tweet,
+        triple.annotation,
+        triple.final_edit,
+        triple.script_title,
+        triple.position_in_thread,
+        `[${embedding.join(',')}]`, // PostgreSQL vector format
+        triple.quality_rating || 3, // Default to medium quality
+        triple.resolved || false,
+      ];
+
+      const result = await pool.query(query, values);
+      return result.rows[0].id;
+    },
+    'mock-id-fallback', // Return mock ID instead of throwing
+    { 
+      operation: 'captureVectorTriple', 
+      triple: { 
+        original_length: triple.original_tweet.length,
+        annotation_length: triple.annotation.length,
+        final_edit_length: triple.final_edit.length 
+      } 
     }
-
-    const pool = getDBPool();
-    
-    // Generate embedding from the full triple context
-    const embeddingText = `${triple.original_tweet} ${triple.annotation} ${triple.final_edit}`.trim();
-    const embedding = await generateEmbedding(embeddingText);
-
-    const query = `
-      INSERT INTO vector_triples (
-        original_tweet,
-        annotation,
-        final_edit,
-        script_title,
-        position_in_thread,
-        embedding_vector,
-        quality_rating,
-        resolved
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING id
-    `;
-
-    const values = [
-      triple.original_tweet,
-      triple.annotation,
-      triple.final_edit,
-      triple.script_title,
-      triple.position_in_thread,
-      `[${embedding.join(',')}]`, // PostgreSQL vector format
-      triple.quality_rating || 3, // Default to medium quality
-      triple.resolved || false,
-    ];
-
-    const result = await pool.query(query, values);
-    return result.rows[0].id;
-  } catch (error) {
-    console.warn('Failed to capture vector triple (database unavailable):', error);
-    return 'error-mock-id'; // Return mock ID instead of throwing
-  }
+  );
 }
 
 // Find similar vector triples for RAG contextualization

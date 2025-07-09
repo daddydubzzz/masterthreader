@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Thread } from '@/types';
 import { UseRightPanelReturn, EditCapture, LearningPattern, MegaPromptSuggestion, TrainingSession } from '../types';
+import { findEditAnnotationPairs, createVectorTripleFromPair } from '@/lib/temporalPairing';
 
 export function useRightPanel(
   threads?: Thread[],
@@ -187,32 +188,33 @@ export function useRightPanel(
   const processThreadAnnotations = useCallback(async (threadsToProcess: Thread[]) => {
     setIsProcessing(true);
     try {
-      // Process each thread's annotations for RAG capture
+      // Process each thread using robust temporal pairing
       for (const thread of threadsToProcess) {
-        for (const annotation of thread.annotations) {
-          // Find matching edit for this annotation (within 30 seconds)
-          const matchingEdit = thread.edits.find(edit => 
-            Math.abs(edit.timestamp.getTime() - annotation.timestamp.getTime()) < 30000
+        const editAnnotationPairs = findEditAnnotationPairs(
+          thread.edits,
+          thread.annotations,
+          { timeWindowMs: 30000, maxPairs: 10 }
+        );
+
+        // Capture each paired edit-annotation as complete vector triple
+        for (const pair of editAnnotationPairs) {
+          const vectorTriple = createVectorTripleFromPair(
+            pair,
+            originalScript ? originalScript.slice(0, 50) : undefined,
+            0 // Use 0 as default position for now
           );
 
-          if (matchingEdit) {
-            // Capture complete vector triple in RAG database
-            await fetch('/api/capture-edit', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                original_tweet: matchingEdit.originalText,
-                annotation: annotation.text,
-                final_edit: matchingEdit.editedText,
-                script_title: originalScript ? originalScript.slice(0, 50) : undefined,
-                position_in_thread: 0,
-                quality_rating: 4, // High quality from manual annotation
-                resolved: false,
-              }),
-            });
-          }
+          // Capture complete vector triple in RAG database
+          await fetch('/api/capture-edit', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              ...vectorTriple,
+              quality_rating: 4, // High quality from manual annotation
+            }),
+          });
         }
       }
       

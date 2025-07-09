@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { Thread, Edit, Annotation } from '@/types';
+import { findRecentEditForAnnotation, createVectorTripleFromPair } from '@/lib/temporalPairing';
 
 interface UseThreadDisplayReturn {
   hasEditsOrAnnotations: boolean;
@@ -116,19 +117,28 @@ export function useThreadDisplay(
 
     updateThread(threadIndex, updatedThread);
 
-    // If there's a recent edit (within 30 seconds), capture complete vector triple
-    const recentEdit = thread.edits.find(edit => 
-      Date.now() - edit.timestamp.getTime() < 30000 // 30 seconds
-    );
+    // Use robust temporal pairing to find matching edit
+    const recentEdit = findRecentEditForAnnotation(newAnnotation, thread.edits);
 
     if (recentEdit) {
-      // Capture the complete vector triple: original → annotation → final_edit
-      captureVectorTripleInDB(
-        recentEdit.originalText,
-        annotation,
-        recentEdit.editedText,
+      // Create vector triple from the paired edit and annotation
+      const vectorTriple = createVectorTripleFromPair(
+        {
+          edit: recentEdit,
+          annotation: newAnnotation,
+          timeDifference: Math.abs(newAnnotation.timestamp.getTime() - recentEdit.timestamp.getTime())
+        },
         scriptTitle,
         threadIndex // Use thread index as rough position
+      );
+
+      // Capture the complete vector triple: original → annotation → final_edit
+      captureVectorTripleInDB(
+        vectorTriple.original_tweet,
+        vectorTriple.annotation,
+        vectorTriple.final_edit,
+        vectorTriple.script_title,
+        vectorTriple.position_in_thread
       );
     }
   }, [threads, updateThread, scriptTitle]);

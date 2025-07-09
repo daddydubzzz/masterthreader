@@ -139,7 +139,20 @@ Critical formatting requirements:
       })
       .join('\n\n');
 
-    const recursionPrompt = `You are an AI prompt engineering expert specializing in Josh's Twitter thread creation system.
+    // Build enhanced recursion prompt with RAG context
+    const contextualExamplesSection = payload.ragContext?.contextualExamples?.length ? 
+      `\n\nCONTEXTUAL EXAMPLES FROM HISTORY:
+${payload.ragContext.contextualExamples.map(ex => 
+  `Original: "${ex.original}"\nAnnotation: "${ex.annotation}"\nImproved: "${ex.improved}"`
+).join('\n\n')}` : '';
+
+    const patternContextSection = payload.ragContext?.patternContext ? 
+      `\n\nSIMILAR PATTERN ANALYSIS:
+${payload.ragContext.patternContext}` : '';
+
+    const recurringContextSection = payload.ragContext?.recurringContext || '';
+
+    const recursionPrompt = `You are an AI prompt engineering expert specializing in Twitter thread creation systems.
 
 ORIGINAL SCRIPT:
 """
@@ -151,11 +164,13 @@ USER EDITS AND ANNOTATIONS:
 ${editsAndAnnotations}
 """
 
-CURRENT MEGA PROMPT VERSION: ${payload.megaPromptVersion}
+CURRENT MEGA PROMPT VERSION: ${payload.megaPromptVersion}${contextualExamplesSection}${patternContextSection}${recurringContextSection}
 
-Analyze Josh's editing patterns and provide:
-1. Updated threads incorporating his specific feedback patterns
-2. New prompt rules that capture his preferences
+Analyze the user's editing patterns and provide:
+1. Updated threads incorporating the specific feedback patterns
+2. New prompt rules that capture the user's preferences
+
+Use the contextual examples and pattern analysis to understand recurring themes and improvements.
 
 Respond with valid JSON:
 {
@@ -168,9 +183,9 @@ Respond with valid JSON:
   "suggestedRules": [
     {
       "id": "rule-new-1", 
-      "content": "New rule based on Josh's feedback patterns",
+      "content": "New rule based on user's feedback patterns",
       "category": "improvement",
-      "reasoning": "Why this rule helps based on his edits"
+      "reasoning": "Why this rule helps based on the user's edits"
     }
   ]
 }`;
@@ -348,9 +363,143 @@ ${script}`;
     }
   }
 
-  async performRecursion(): Promise<RecursionResponse> {
-    // TODO: Implement Anthropic recursion - similar to OpenAI but using Claude's format
-    throw new Error('Anthropic recursion not yet implemented');
+  async performRecursion(payload: RecursionPayload): Promise<RecursionResponse> {
+    const Anthropic = (await import('@anthropic-ai/sdk')).default;
+    const anthropic = new Anthropic({
+      apiKey: this.config.apiKey,
+    });
+
+    const editsAndAnnotations = payload.threads
+      .map(thread => {
+        const edits = thread.edits.map(edit => 
+          `Edit: "${edit.originalText}" → "${edit.editedText}"`
+        ).join('\n');
+        
+        const annotations = thread.annotations.map(annotation =>
+          `${annotation.type.toUpperCase()}: ${annotation.text}`
+        ).join('\n');
+        
+        return `Thread ${thread.id}:\n${edits}\n${annotations}`;
+      })
+      .join('\n\n');
+
+    // Build enhanced recursion prompt with RAG context
+    const contextualExamplesSection = payload.ragContext?.contextualExamples?.length ? 
+      `\n\nCONTEXTUAL EXAMPLES FROM HISTORY:
+${payload.ragContext.contextualExamples.map(ex => 
+  `Original: "${ex.original}"\nAnnotation: "${ex.annotation}"\nImproved: "${ex.improved}"`
+).join('\n\n')}` : '';
+
+    const patternContextSection = payload.ragContext?.patternContext ? 
+      `\n\nSIMILAR PATTERN ANALYSIS:
+${payload.ragContext.patternContext}` : '';
+
+    const recurringContextSection = payload.ragContext?.recurringContext || '';
+
+    const recursionPrompt = `You are an AI prompt engineering expert specializing in Twitter thread creation systems.
+
+ORIGINAL SCRIPT:
+"""
+${payload.originalScript}
+"""
+
+USER EDITS AND ANNOTATIONS:
+"""
+${editsAndAnnotations}
+"""
+
+CURRENT MEGA PROMPT VERSION: ${payload.megaPromptVersion}${contextualExamplesSection}${patternContextSection}${recurringContextSection}
+
+Analyze the user's editing patterns and provide:
+1. Updated threads incorporating the specific feedback patterns
+2. New prompt rules that capture the user's preferences
+
+Use the contextual examples and pattern analysis to understand recurring themes and improvements.
+
+You must respond with valid JSON in exactly this format:
+{
+  "updatedThreads": [
+    {
+      "id": "thread-1",
+      "content": "Updated thread content with em-dash separators"
+    },
+    {
+      "id": "thread-2", 
+      "content": "Second updated thread content"
+    },
+    {
+      "id": "thread-3",
+      "content": "Third updated thread content"
+    }
+  ],
+  "suggestedRules": [
+    {
+      "id": "rule-new-1",
+      "content": "New rule based on user feedback patterns",
+      "category": "improvement",
+      "reasoning": "Why this rule helps based on the user's edits"
+    }
+  ]
+}
+
+Requirements:
+- Return ONLY valid JSON, no other text
+- Use em-dash (—) separators between tweets in thread content
+- Incorporate the user's specific editing patterns into the updated threads
+- Generate practical rules that would prevent similar edits in the future`;
+
+    try {
+      const response = await anthropic.messages.create({
+        model: this.config.model || 'claude-3-5-sonnet-20241022',
+        max_tokens: 4000,
+        temperature: 0.3,
+        messages: [
+          {
+            role: 'user',
+            content: recursionPrompt
+          }
+        ]
+      });
+
+      const content = response.content[0];
+      if (content.type !== 'text') {
+        throw new Error('Unexpected response format from Anthropic');
+      }
+
+      // Parse JSON response
+      const jsonMatch = content.text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('No JSON found in Anthropic recursion response');
+      }
+
+      const parsedResponse = JSON.parse(jsonMatch[0]);
+      
+      // Validate response structure
+      if (!parsedResponse.updatedThreads || !Array.isArray(parsedResponse.updatedThreads)) {
+        throw new Error('Invalid response format: missing or invalid updatedThreads');
+      }
+
+      if (!parsedResponse.suggestedRules || !Array.isArray(parsedResponse.suggestedRules)) {
+        throw new Error('Invalid response format: missing or invalid suggestedRules');
+      }
+
+      // Convert to Thread format
+      const updatedThreads = parsedResponse.updatedThreads.map((thread: any) => ({
+        id: thread.id,
+        content: thread.content,
+        edits: [],
+        annotations: []
+      }));
+
+      return {
+        updatedThreads,
+        suggestedRules: parsedResponse.suggestedRules
+      };
+
+    } catch (error) {
+      console.error('Anthropic recursion error:', error);
+      throw new Error('Failed to perform recursion analysis with Anthropic');
+    }
   }
 }
 
