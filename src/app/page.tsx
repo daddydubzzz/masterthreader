@@ -1,103 +1,234 @@
-import Image from "next/image";
+'use client';
+
+import { useState } from 'react';
+import { Thread, MegaPrompt, AppState, RecursionPayload, PromptRule } from '@/types';
+import { LandingInterface } from '@/components/LandingInterface';
+import { ThreadDisplay } from '@/components/ThreadDisplay';
+import { RuleReview } from '@/components/RuleReview';
+import { createNewMegaPromptVersion, addMegaPromptVersion } from '@/lib/megaPrompts';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [appState, setAppState] = useState<AppState>('script-input');
+  const [originalScript, setOriginalScript] = useState('');
+  const [threads, setThreads] = useState<Thread[]>([]);
+  const [megaPrompt, setMegaPrompt] = useState<MegaPrompt | null>(null);
+  const [, setIsRecursionLoading] = useState(false);
+  const [suggestedRules, setSuggestedRules] = useState<PromptRule[]>([]);
+  const [acceptedRules, setAcceptedRules] = useState<PromptRule[]>([]);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const handleThreadsGenerated = (generatedThreads: Thread[], usedMegaPrompt: MegaPrompt) => {
+    setThreads(generatedThreads);
+    setMegaPrompt(usedMegaPrompt);
+    setAppState('threads-display');
+  };
+
+  const handleThreadsUpdated = (updatedThreads: Thread[]) => {
+    setThreads(updatedThreads);
+  };
+
+  const handleRecursionRequested = async () => {
+    if (!megaPrompt) return;
+
+    setIsRecursionLoading(true);
+    setAppState('recursion-ui');
+
+    try {
+      const payload: RecursionPayload = {
+        originalScript,
+        threads,
+        megaPromptVersion: megaPrompt.version
+      };
+
+      const response = await fetch('/api/recursion', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to perform recursion');
+      }
+
+      const result = await response.json();
+      
+      // Update threads with recursion results
+      setThreads(result.updatedThreads);
+      
+      // Handle suggested rules
+      if (result.suggestedRules && result.suggestedRules.length > 0) {
+        setSuggestedRules(result.suggestedRules);
+      }
+      
+      setAppState('refined-threads');
+      
+    } catch (error) {
+      console.error('Recursion failed:', error);
+      setAppState('threads-display');
+    } finally {
+      setIsRecursionLoading(false);
+    }
+  };
+
+  const handleStartNew = () => {
+    setAppState('script-input');
+    setOriginalScript('');
+    setThreads([]);
+    setMegaPrompt(null);
+    setSuggestedRules([]);
+    setAcceptedRules([]);
+  };
+
+  const handleAcceptRule = (rule: PromptRule) => {
+    if (!megaPrompt) return;
+    
+    // Add to accepted rules
+    setAcceptedRules(prev => [...prev, rule]);
+    
+    // Create new mega prompt version with accepted rules
+    const newMegaPrompt = createNewMegaPromptVersion(megaPrompt, [rule]);
+    addMegaPromptVersion(newMegaPrompt);
+    setMegaPrompt(newMegaPrompt);
+  };
+
+  const handleSkipRule = (rule: PromptRule) => {
+    // Simply remove from suggested rules (do nothing with it)
+    setSuggestedRules(prev => prev.filter(r => r.id !== rule.id));
+  };
+
+  const handleExport = () => {
+    const header = `# Twitter Threads\n\nGenerated using MasterThreader ${megaPrompt?.version || 'v1.0'}\n${acceptedRules.length > 0 ? `Includes ${acceptedRules.length} AI-learned improvements` : ''}\n\n---\n\n`;
+    
+    const threadsMarkdown = threads.map((thread, index) => {
+      const threadStyle = thread.id.includes('story') ? 'Story-Driven' : 
+                         thread.id.includes('data') ? 'Data-Driven' : 
+                         thread.id.includes('actionable') ? 'Actionable' : 
+                         `Thread ${index + 1}`;
+      
+      return `## ${threadStyle}\n\n${thread.content}\n\n---\n`;
+    }).join('\n');
+
+    const markdown = header + threadsMarkdown;
+
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'twitter-threads.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Navigation */}
+      <nav className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">MT</span>
+                </div>
+                <h1 className="text-xl font-semibold text-gray-900">MasterThreader</h1>
+              </div>
+              {megaPrompt && (
+                <span className="text-sm text-gray-500">
+                  v{megaPrompt.version}
+                </span>
+              )}
+              {appState !== 'script-input' && (
+                                 <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-500">
+                   <span className="text-gray-400">
+                     Script
+                   </span>
+                  <span>→</span>
+                  <span className={appState === 'threads-display' ? 'text-blue-600 font-medium' : ''}>
+                    Threads
+                  </span>
+                  <span>→</span>
+                  <span className={appState === 'recursion-ui' ? 'text-blue-600 font-medium' : ''}>
+                    Recursion
+                  </span>
+                  <span>→</span>
+                  <span className={appState === 'export-ready' ? 'text-blue-600 font-medium' : ''}>
+                    Export
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center space-x-3">
+              {appState === 'refined-threads' && (
+                <button
+                  onClick={handleExport}
+                  className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Export Markdown
+                </button>
+              )}
+              {appState !== 'script-input' && (
+                <button
+                  onClick={handleStartNew}
+                  className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                  Start New Script
+                </button>
+              )}
+            </div>
+          </div>
         </div>
+      </nav>
+
+      {/* Main Content */}
+      <main className="py-8">
+        {appState === 'script-input' && (
+          <LandingInterface 
+            onThreadsGenerated={(threads, megaPrompt, originalScript) => {
+              setOriginalScript(originalScript);
+              handleThreadsGenerated(threads, megaPrompt);
+            }} 
+          />
+        )}
+
+        {(appState === 'threads-display' || appState === 'refined-threads') && (
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <ThreadDisplay
+              threads={threads}
+              onThreadsUpdated={handleThreadsUpdated}
+              onRecursionRequested={handleRecursionRequested}
+              scriptTitle={originalScript.trim().split(' ').slice(0, 5).join(' ')}
+            />
+            
+            {/* Rule Review Section - appears after recursion */}
+            {appState === 'refined-threads' && suggestedRules.length > 0 && (
+              <RuleReview
+                suggestedRules={suggestedRules}
+                onAcceptRule={handleAcceptRule}
+                onSkipRule={handleSkipRule}
+                acceptedRules={acceptedRules}
+                currentVersion={megaPrompt?.version || 'v1.0'}
+              />
+            )}
+          </div>
+        )}
+
+        {appState === 'recursion-ui' && (
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-gray-900">Running Recursion</h2>
+              <p className="text-gray-600">
+                Analyzing your edits and annotations to improve the threads...
+              </p>
+            </div>
+            <div className="flex justify-center">
+              <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          </div>
+        )}
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
