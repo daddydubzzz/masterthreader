@@ -100,15 +100,15 @@ CREATE OR REPLACE FUNCTION mark_pattern_resolved(
     rule_contribution TEXT DEFAULT NULL
 )
 RETURNS BOOLEAN
-LANGUAGE sql
+LANGUAGE plpgsql
 AS $$
-    UPDATE edit_patterns 
-    SET 
-        resolved = TRUE,
-        prompt_rule_contribution = COALESCE(rule_contribution, prompt_rule_contribution)
+BEGIN
+    UPDATE vector_triples 
+    SET resolved = TRUE
     WHERE id = pattern_id;
     
-    SELECT FOUND;
+    RETURN FOUND;
+END;
 $$;
 
 -- Function to analyze patterns and provide insights
@@ -117,25 +117,25 @@ RETURNS JSON
 LANGUAGE sql
 AS $$
     SELECT json_build_object(
-        'total_patterns', (SELECT COUNT(*) FROM edit_patterns),
-        'unresolved_patterns', (SELECT COUNT(*) FROM edit_patterns WHERE resolved = FALSE),
-        'avg_quality_rating', (SELECT ROUND(AVG(quality_rating)::numeric, 2) FROM edit_patterns WHERE quality_rating IS NOT NULL),
-        'top_recurring_issues', (
+        'total_patterns', (SELECT COUNT(*) FROM vector_triples),
+        'unresolved_patterns', (SELECT COUNT(*) FROM vector_triples WHERE resolved = FALSE),
+        'avg_quality_rating', (SELECT ROUND(AVG(quality_rating)::numeric, 2) FROM vector_triples WHERE quality_rating IS NOT NULL),
+        'top_recurring_patterns', (
             SELECT json_agg(json_build_object(
-                'original_text', original_text,
+                'original_tweet', original_tweet,
                 'frequency', frequency,
-                'latest_edit', (all_edits)[1]
+                'best_edit', (all_edits)[1]
             ))
-            FROM recurring_issues
+            FROM recurring_patterns
             LIMIT 5
         ),
-        'recent_successful_patterns', (
+        'recent_best_examples', (
             SELECT json_agg(json_build_object(
-                'original_text', original_text,
-                'edit_text', edit_text,
+                'original_tweet', original_tweet,
+                'final_edit', final_edit,
                 'quality_rating', quality_rating
             ))
-            FROM successful_patterns
+            FROM best_examples
             LIMIT 5
         )
     );

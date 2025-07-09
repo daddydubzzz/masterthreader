@@ -216,17 +216,38 @@ class AnthropicClient implements LLMClient {
   }
 
   async generateThreads(script: string, megaPrompt: MegaPrompt): Promise<Thread[]> {
-    // TODO: Implement Anthropic Claude integration with Josh's exact workflow
-    // This should match his current Opus 4 browser interface exactly
-    
     const Anthropic = (await import('@anthropic-ai/sdk')).default;
     const anthropic = new Anthropic({
       apiKey: this.config.apiKey,
     });
 
-    // Combine mega prompt + script exactly as Josh does in browser
-    const combinedPrompt = `${megaPrompt.content}
+    // Add structured output requirement to the mega prompt
+    const structuredPrompt = `${megaPrompt.content}
 
+CRITICAL: You must respond with valid JSON in exactly this format:
+
+{
+  "threads": [
+    {
+      "title": "Brief thread description",
+      "tweets": [
+        {
+          "content": "Tweet content",
+          "characterCount": 180
+        }
+      ]
+    }
+  ]
+}
+
+Requirements:
+- Create exactly 3 threads
+- Each tweet 120-280 characters 
+- Use em-dash (—) separators between tweets
+- End first tweet with 🧵👇
+- Return ONLY valid JSON, no other text
+
+Script to convert:
 ${script}`;
 
     try {
@@ -237,18 +258,17 @@ ${script}`;
         messages: [
           {
             role: 'user',
-            content: combinedPrompt
+            content: structuredPrompt
           }
         ]
       });
 
-      // Parse Anthropic response and convert to Thread format
       const content = response.content[0];
       if (content.type !== 'text') {
         throw new Error('Unexpected response format from Anthropic');
       }
 
-      // For now, return simple format until we implement structured parsing
+      // Parse JSON response
       return this.parseAnthropicResponse(content.text);
 
     } catch (error) {
@@ -258,16 +278,44 @@ ${script}`;
   }
 
   private parseAnthropicResponse(content: string): Thread[] {
-    // Parse Anthropic's text response into thread format
-    // This is a simplified parser - would need enhancement for production
-    const threadSections = content.split('THREAD').filter(section => section.trim());
-    
-    return threadSections.map((section, index) => ({
-      id: `thread-${index + 1}`,
-      content: section.trim(),
-      edits: [],
-      annotations: []
-    }));
+    try {
+      // Extract JSON from response (in case there's extra text)
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('No JSON found in response');
+      }
+
+      const structuredResponse: LLMThreadResponse = JSON.parse(jsonMatch[0]);
+      
+      // Convert structured response to Thread format
+      return structuredResponse.threads.map((structuredThread, index) => {
+        // Join tweets with proper em-dash separators
+        const content = structuredThread.tweets
+          .map(tweet => tweet.content)
+          .join('\n\n—\n\n');
+
+        return {
+          id: `thread-${index + 1}`,
+          content,
+          edits: [],
+          annotations: []
+        };
+      });
+
+    } catch (error) {
+      console.error('Failed to parse Anthropic JSON response:', error);
+      console.log('Raw content:', content);
+      
+      // Fallback to simple text parsing if JSON parsing fails
+      const threadSections = content.split(/THREAD\s*\d*:?/i).filter(section => section.trim());
+      
+      return threadSections.slice(0, 3).map((section, index) => ({
+        id: `thread-${index + 1}`,
+        content: section.trim(),
+        edits: [],
+        annotations: []
+      }));
+    }
   }
 
   async performRecursion(): Promise<RecursionResponse> {

@@ -1,0 +1,65 @@
+Please take the CONTENT below and turn it three distinct TWITTER-THREADS that will go viral.
+
+A TWITTER-THREAD consists of 6-20 separate but connected tweets, with one leading to the next. They are each 280 characters or less. You end each tweet with a natural cliffhanger, something that will keep the reader engaged and continue to read the rest of the thread. You don't do this in a gimmicky way, you just create curiosity gaps that can't be filled unless the reader continues with the thread.
+
+Open Loops: A curiosity gap that compels the reader to continue through the thread (in a way that's on-brand, without resorting to tricks or gimmicks, and ideally without withholding value but rather delivering so much value that the desire to keep reading grows stronger). It's about creating forward momentum. Each time you close one loop, open another. Open loops ensure that every tweet cohesively blends with the previous and the next, maintaining constant forward movement. When needed, create anchor tweets that summarize what's been covered so far, keeping the reader oriented and ensuring they never feel lost or confused. These anchor tweets also serve as clear markers, helping to structure the thread and giving readers a sense of steady progression.
+
+Important instructions:
+
+You are to find three different key sections or concepts or angles to build twitter threads out of. This means carefully reading the script three times, finding the best wholly distinct concepts/interventions (often problems, non-obvious insights, and solutions) contained within the script, and then crafting distinct Twitter threads with completely different angles/hooks out of each of these three "chunks" of content. The result should be three unique Twitter threads, each covering different ground, not covering the same ground from merely a different angle.
+
+Note: If you find that it's better to cover the same ground from a different angle due to the script content being too limited to carve out three distinct content chunks, if you think this will make for a more powerful and potentially viral twitter thread, that's okay - but specify that you did this, and prefer to create three radically distinct chunks of content (the scripts usually have more than ample content for you to work with to achieve this goal).
+
+The most important part of this process is to ensure that you get the opening tweet right. You have to get the angle and hook absolutely perfect in order to compel the reader to read the rest of the thread. Note that the opening tweet can be up to 280 characters, but DOESN'T HAVE TO BE. If it's more compelling to do something that's even shorter, that's fine. What matters most is that it captures attention and is maximally compelling to get the reader to read the rest of the thread with a high degree of interest.
+
+You need to be able to seamlessly adapt the script below to fit the TWITTER THREAD format. This requires you to be a master at pulling out the best concepts from the full video script. You are not to just summarize or compress the content to be shorter and fit the TWITTER THREAD content. It needs to be fundamentally rethought through the constraint of the TWITTER THREAD medium (the first tweet of 280 characters must be sufficiently compelling to capture their attention to continue reading the thread… and then each individual tweet under that must be compelling enough to keep them continuing to read (a combination of massive value and intrigue) all the way through to the end of the thread.
+
+HOOK FITNESS TEST
+• Must create tension + promise payoff in ≤250 chars.
+• Must NOT reveal the core noun (save it for tweet 2–3).
+
+OUTLINE REQUIREMENT
+• Every thread includes one anchor/recap tweet at midpoint.
+
+CLIFFHANGER VARIETY RULE
+Rotate endings in this order whenever possible:
+1. Unanswered question
+2. "Here's what happens…"
+3. "But there's a twist…"
+4. Ellipsis
+5. Bold statement
+Never repeat the same style twice in a row.
+
+ANTI‑ECHO ACROSS THREADS
+• Stories, metaphors, and stats can appear only once across the three threads.
+
+A TWITTER-THREAD is a chain of POWER-TWEETS. Here are some characteristics of a POWER-TWEET:
+
+POWER-TWEETS are pithy, sticky, memorable one-liners that communicate an incredible amount of information into a single sentence, and that act as a memorable mantra that people can remember to guide their behavior for positive change (based on the CONTENT itself, below), or to remember a valuable concept in such a way that it's easy to recall and share and explain to others. Clarity is key here. Avoid cheesiness and hyperbole, and instead, make the sentence plain, simple, and clear, not poetic or clever or metaphorical.
+
+In a POWER-TWEET, you are expressing big ideas in few words, Employing a process of discovery by deletion, Moving from right to left in writing (deleting unnecessary text), Expanding ideas while reducing word count, Ensuring ideas are both simple and universal.
+
+POWER-TWEETS are declarative and authoritative, and are often (but not always) polarizing. Polarizing means that they tend to resonate deeply with someone who identifies with the content (either by reinforcing their worldview or the desired, aspirational identity), or someone who vehemently opposes or disagrees with the content. In other words, POWER-TWEETS aren't vague, they tend to be binary, black-and-white, with nothing in between and very little room for nuance. For example: "The single most important decision you make is where you live." And "The more easily you get offended, the less intelligent you actually are." And "AI will replace the people who think it will." There is no hedging. The point is made with confidence.
+
+AUDIENCE: modern white-collar knowledge workers, professionals, entrepreneurs, and executives who want to access flow state, get more done in less time, and perform at their peak so they can contribute fully.
+
+FINAL INSTRUCTIONS:
+Take whatever you would initially output after following the instructions above, and then do a final pass to make everything 10x better. That sounds ambitious, but I know you can do it.
+
+MANDATORY OUTPUT STRUCTURE:
+You MUST output exactly 3 complete Twitter threads following the format specified above. Do not ask questions. Do not seek confirmation. Do not provide commentary. Simply analyze the provided script content and generate the 3 threads immediately.
+
+OUTPUT ONLY THE FINAL THREADS (do not show planning phases)
+Format:
+THREAD 1:
+[tweet 1] ‹character count›
+---
+[tweet 2] ‹character count›
+---
+[continue for full thread]
+
+THREAD 2:
+[repeat format]
+
+THREAD 3:
+[repeat format] 

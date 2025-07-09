@@ -17,47 +17,137 @@ export function ThreadDisplay({
   } = useThreadDisplay(threads, onThreadsUpdated, scriptTitle);
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       {/* Header */}
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Generated Threads
-        </h2>
-        <p className="text-gray-600">
-          Click on any tweet to edit it, or add comments to provide feedback.
-          {hasEditsOrAnnotations && " Once you've made changes, run recursion to improve the threads."}
-        </p>
-      </div>
+      <header className="text-center mb-16 animate-slide-up">
+        <div className="max-w-3xl mx-auto">
+          <div className="inline-flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <div className="text-left">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold gradient-text tracking-tight text-balance">
+                Generated Threads
+              </h1>
+              <div className="flex items-center gap-2 mt-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                <span className="text-sm font-medium text-gray-500">{threads.length} variations ready</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            <p className="text-xl text-gray-700 leading-relaxed text-balance">
+              Your content has been transformed into <span className="font-semibold text-gray-900">{threads.length} optimized thread variations</span>.
+              Click any tweet to edit, or add comments to guide the AI.
+            </p>
+            
+            {hasEditsOrAnnotations && (
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-full text-amber-700 font-medium text-sm animate-fade-in">
+                <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
+                Changes detected - run recursion to improve threads
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
 
-      {/* Thread Cards */}
-      <div className="space-y-6">
+      {/* Thread Grid */}
+      <div className="space-y-8 mb-16">
         {threads.map((thread, index) => (
-          <ThreadCard
-            key={thread.id}
-            thread={thread}
-            threadIndex={index}
-            onThreadUpdated={(updatedThread) => updateThread(index, updatedThread)}
-          />
+          <div key={thread.id} className="animate-slide-up" style={{ animationDelay: `${index * 150}ms` }}>
+            <ThreadCard
+              thread={thread}
+              threadIndex={index}
+              onThreadUpdated={(updatedThread) => updateThread(index, updatedThread)}
+            />
+          </div>
         ))}
       </div>
 
-      {/* Recursion Button */}
-      <RecursionButton
-        visible={hasEditsOrAnnotations}
-        onClick={onRecursionRequested}
-      />
-
-      {/* Instructions */}
-      {!hasEditsOrAnnotations && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-          <h3 className="font-medium text-blue-900 mb-2">Next Steps</h3>
-          <div className="text-sm text-blue-800 space-y-1">
-            <p>• <strong>Edit tweets:</strong> Click on any tweet text to make changes</p>
-            <p>• <strong>Add comments:</strong> Use the &ldquo;Comment&rdquo; button to provide feedback</p>
-            <p>• <strong>Run recursion:</strong> After making changes, the system will learn and improve</p>
-          </div>
+      {/* Action Section */}
+      <div className="text-center space-y-8">
+        {/* Recursion Action */}
+        <div className="animate-fade-in">
+          <RecursionButton
+            visible={hasEditsOrAnnotations}
+            onClick={onRecursionRequested}
+          />
         </div>
-      )}
+
+        {/* Instructions */}
+        {!hasEditsOrAnnotations && (
+          <div className="max-w-4xl mx-auto animate-slide-up">
+            <div className="card-premium rounded-3xl p-8 lg:p-12">
+              <div className="text-center space-y-6">
+                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-xl">
+                  <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                
+                <div className="space-y-4">
+                  <h3 className="text-2xl font-bold gradient-text">Ready for refinement</h3>
+                  <p className="text-gray-600 text-lg leading-relaxed max-w-2xl mx-auto">
+                    Your threads are ready to use, but you can make them even better by editing and adding feedback.
+                  </p>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-6 pt-6">
+                  {[
+                    {
+                      icon: (
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      ),
+                      title: "Edit tweets",
+                      description: "Click on any tweet text to make direct edits",
+                      color: "blue"
+                    },
+                    {
+                      icon: (
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                      ),
+                      title: "Add comments",
+                      description: "Use comment button to provide detailed feedback",
+                      color: "emerald"
+                    },
+                    {
+                      icon: (
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                      ),
+                      title: "Run recursion",
+                      description: "After changes, AI learns and improves the threads",
+                      color: "purple"
+                    }
+                  ].map((item, index) => (
+                    <div key={index} className="text-center space-y-3">
+                      <div className={`w-12 h-12 mx-auto bg-gradient-to-br ${
+                        item.color === 'blue' ? 'from-blue-500 to-blue-600' :
+                        item.color === 'emerald' ? 'from-emerald-500 to-emerald-600' :
+                        'from-purple-500 to-purple-600'
+                      } rounded-xl flex items-center justify-center text-white shadow-lg`}>
+                        {item.icon}
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="font-semibold text-gray-900">{item.title}</h4>
+                        <p className="text-sm text-gray-600 leading-relaxed">{item.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 } 

@@ -6,6 +6,9 @@ let pool: Pool | null = null;
 
 function getDBPool(): Pool {
   if (!pool) {
+    if (!process.env.DATABASE_URL) {
+      throw new Error('DATABASE_URL not configured - vector DB unavailable');
+    }
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
@@ -36,9 +39,15 @@ async function generateEmbedding(text: string): Promise<number[]> {
 
 // Store a vector triple in the RAG database
 export async function captureVectorTriple(triple: VectorTriple): Promise<string> {
-  const pool = getDBPool();
-  
   try {
+    // Check if database is configured
+    if (!process.env.DATABASE_URL) {
+      console.warn('DATABASE_URL not configured - vector triple not captured');
+      return 'no-db-mock-id';
+    }
+
+    const pool = getDBPool();
+    
     // Generate embedding from the full triple context
     const embeddingText = `${triple.original_tweet} ${triple.annotation} ${triple.final_edit}`.trim();
     const embedding = await generateEmbedding(embeddingText);
@@ -71,16 +80,22 @@ export async function captureVectorTriple(triple: VectorTriple): Promise<string>
     const result = await pool.query(query, values);
     return result.rows[0].id;
   } catch (error) {
-    console.error('Failed to capture vector triple:', error);
-    throw new Error('Vector triple storage failed');
+    console.warn('Failed to capture vector triple (database unavailable):', error);
+    return 'error-mock-id'; // Return mock ID instead of throwing
   }
 }
 
 // Find similar vector triples for RAG contextualization
 export async function findSimilarTriples(query: VectorTripleQuery): Promise<SimilarTriple[]> {
-  const pool = getDBPool();
-  
   try {
+    // Check if database is configured
+    if (!process.env.DATABASE_URL) {
+      console.warn('DATABASE_URL not configured - returning empty results');
+      return [];
+    }
+
+    const pool = getDBPool();
+    
     // Generate embedding for the query text
     const queryEmbedding = await generateEmbedding(query.query_text);
     
@@ -112,15 +127,20 @@ export async function findSimilarTriples(query: VectorTripleQuery): Promise<Simi
       similarity_score: row.similarity_score,
     }));
   } catch (error) {
-    console.error('Failed to find similar triples:', error);
-    throw new Error('Triple retrieval failed');
+    console.warn('Failed to find similar triples (database unavailable):', error);
+    return []; // Return empty array instead of throwing
   }
 }
 
 // Get contextual examples for script generation (main RAG function)
 export async function getContextualExamples(scriptContext: string, limit = 5): Promise<VectorTriple[]> {
-  
   try {
+    // Check if database is configured
+    if (!process.env.DATABASE_URL) {
+      console.warn('DATABASE_URL not configured - RAG system unavailable');
+      return [];
+    }
+
     // Find high-quality examples similar to the script context
     const similarTriples = await findSimilarTriples({
       query_text: scriptContext,
@@ -132,7 +152,7 @@ export async function getContextualExamples(scriptContext: string, limit = 5): P
     // Return the best examples for contextualization
     return similarTriples.slice(0, limit).map(st => st.triple);
   } catch (error) {
-    console.error('Failed to get contextual examples:', error);
+    console.warn('Failed to get contextual examples (database unavailable):', error);
     return []; // Return empty array rather than failing
   }
 }

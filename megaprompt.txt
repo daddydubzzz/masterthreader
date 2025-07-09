@@ -1711,13 +1711,20 @@ If any fails, rewrite before final output.
 PHASE 4 – DUPLICATION GUARD
 • Cross‑scan all three threads.  
 • Remove/replace any sentence sharing ≥7 consecutive words with another thread.
+OUTPUT ONLY THE FINAL THREADS (do not show planning phases)
+Format:
+THREAD 1:
+[tweet 1] ‹character count›
+---
+[tweet 2] ‹character count›
+---
+[continue for full thread]
 
-OUTPUT ORDER
-1. Show the Idea Block list.  
-2. “THREAD 1” … tweets & char counts  
-3. “THREAD 2” …  
-4. “THREAD 3” …
+THREAD 2:
+[repeat format]
 
+THREAD 3:
+[repeat format]
 =======================================================================
 
 Output Instructions:
@@ -1738,6 +1745,5 @@ INSTRUCTIONAL CONTENT vs SOURCE CONTENT:
 FINAL INSTRUCTIONS:
 Take whatever you would initially output after following the instructions above, and then do a final pass to make everything 10x better. That sounds ambitious, but I know you can do it.
 
-Are you ready for the script? I will provide it separately so that you know that the script is the content that you are working with when following the instructions above (not any of the example content that I've sent within this mega prompt). Please confirm.
-
-Ask me clarifying questions until you're 95% certain you can complete this prompt successfully. 
+MANDATORY OUTPUT STRUCTURE:
+You MUST output exactly 3 complete Twitter threads following the format specified above. Do not ask questions. Do not seek confirmation. Do not provide commentary. Simply analyze the provided script content and generate the 3 threads immediately. 
