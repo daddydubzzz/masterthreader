@@ -1,9 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { UseLeftPanelReturn, MegaPromptItem } from '../types';
 
 export function useLeftPanel(
-  selectedMegaPrompt?: string,
-  onMegaPromptSelect?: (id: string) => void,
   onMegaPromptChange?: (megaPrompt: MegaPromptItem) => void
 ): UseLeftPanelReturn {
   // State management
@@ -51,11 +49,13 @@ export function useLeftPanel(
     }
   ]);
 
-  // Event handlers
-  const handleMegaPromptSelect = useCallback((id: string) => {
-    onMegaPromptSelect?.(id);
-  }, [onMegaPromptSelect]);
+  // Get active megaprompts that will be used for generation
+  const activeMegaPrompts = useMemo(() => 
+    megaPrompts.filter(mp => mp.isActive), 
+    [megaPrompts]
+  );
 
+  // Event handlers
   const handleMegaPromptCreate = useCallback(() => {
     setIsCreating(true);
     setEditingMegaPrompt(undefined);
@@ -115,11 +115,10 @@ export function useLeftPanel(
 
   return {
     megaPrompts,
-    selectedMegaPrompt,
+    activeMegaPrompts,
     isCreating,
     isEditing,
     editingMegaPrompt,
-    handleMegaPromptSelect,
     handleMegaPromptCreate,
     handleMegaPromptEdit,
     handleMegaPromptSave,

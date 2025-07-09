@@ -1,11 +1,10 @@
-import { Thread } from '@/types';
+import { Thread, MegaPrompt } from '@/types';
 
 // Main RightPanel props
 export interface RightPanelProps {
-  generatedThreads?: Thread[];
+  threads?: Thread[];
+  megaPrompt?: MegaPrompt;
   originalScript?: string;
-  selectedMegaPrompt?: string;
-  onMegaPromptSuggestion: (suggestion: string) => void;
 }
 
 // AI Training and Learning types

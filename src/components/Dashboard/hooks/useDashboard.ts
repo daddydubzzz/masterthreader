@@ -1,41 +1,36 @@
 import { useState, useCallback } from 'react';
 import { Thread, MegaPrompt } from '@/types';
+import { MegaPromptItem } from '@/components/LeftPanel/types';
 import { UseDashboardReturn } from '../types';
 
 export function useDashboard(): UseDashboardReturn {
-  // Central state management for inter-panel communication
-  const [selectedMegaPrompt, setSelectedMegaPrompt] = useState<string | undefined>();
-  const [generatedThreads, setGeneratedThreads] = useState<Thread[] | undefined>();
-  const [originalScript, setOriginalScript] = useState<string | undefined>();
-  const [currentMegaPrompt, setCurrentMegaPrompt] = useState<MegaPrompt | undefined>();
+  // State management
+  const [threads, setThreads] = useState<Thread[]>([]);
+  const [megaPrompt, setMegaPrompt] = useState<MegaPrompt | undefined>();
+  const [originalScript, setOriginalScript] = useState<string>('');
 
-  // Handle megaprompt selection from LeftPanel
-  const handleMegaPromptSelect = useCallback((megaPromptId: string) => {
-    setSelectedMegaPrompt(megaPromptId);
-  }, []);
-
-  // Handle thread generation from MiddlePanel
-  const handleThreadsGenerated = useCallback((threads: Thread[], megaPrompt: MegaPrompt, script: string) => {
-    setGeneratedThreads(threads);
-    setCurrentMegaPrompt(megaPrompt);
+  // Event handlers
+  const handleThreadsGenerated = useCallback((
+    newThreads: Thread[], 
+    usedMegaPrompt: MegaPrompt, 
+    script: string
+  ) => {
+    setThreads(newThreads);
+    setMegaPrompt(usedMegaPrompt);
     setOriginalScript(script);
   }, []);
 
-  // Handle megaprompt suggestions from RightPanel
-  const handleMegaPromptSuggestion = useCallback((suggestion: string) => {
-    // TODO: Implement megaprompt updating based on AI suggestions
-    console.log('Received megaprompt suggestion:', suggestion);
-    // This would integrate with the megaprompt management system
-    // to update the selected megaprompt with the suggested improvements
+  const handleMegaPromptChange = useCallback((changedMegaPrompt: MegaPromptItem) => {
+    // Handle megaprompt changes from left panel
+    // This could trigger regeneration or update current megaprompt
+    console.log('MegaPrompt changed:', changedMegaPrompt);
   }, []);
 
   return {
-    selectedMegaPrompt,
-    generatedThreads,
+    threads,
+    megaPrompt,
     originalScript,
-    currentMegaPrompt,
-    handleMegaPromptSelect,
     handleThreadsGenerated,
-    handleMegaPromptSuggestion
+    handleMegaPromptChange
   };
 } 

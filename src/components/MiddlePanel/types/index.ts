@@ -2,7 +2,6 @@ import { Thread, MegaPrompt } from '@/types';
 
 // Main MiddlePanel props
 export interface MiddlePanelProps {
-  selectedMegaPrompt?: string;
   onThreadsGenerated: (threads: Thread[], megaPrompt: MegaPrompt, originalScript: string) => void;
 }
 

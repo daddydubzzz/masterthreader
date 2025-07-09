@@ -12,16 +12,12 @@ export interface MegaPromptItem {
 
 // Main LeftPanel props
 export interface LeftPanelProps {
-  selectedMegaPrompt?: string;
-  onMegaPromptSelect: (megaPromptId: string) => void;
   onMegaPromptChange?: (megaPrompt: MegaPromptItem) => void;
 }
 
 // Component props
 export interface MegaPromptCardProps {
   megaPrompt: MegaPromptItem;
-  isSelected: boolean;
-  onClick: () => void;
   onEdit?: () => void;
   onToggleActive?: () => void;
 }
@@ -36,11 +32,10 @@ export interface MegaPromptFormProps {
 // Hook return types
 export interface UseLeftPanelReturn {
   megaPrompts: MegaPromptItem[];
-  selectedMegaPrompt: string | undefined;
+  activeMegaPrompts: MegaPromptItem[];
   isCreating: boolean;
   isEditing: boolean;
   editingMegaPrompt: MegaPromptItem | undefined;
-  handleMegaPromptSelect: (id: string) => void;
   handleMegaPromptCreate: () => void;
   handleMegaPromptEdit: (megaPrompt: MegaPromptItem) => void;
   handleMegaPromptSave: (megaPrompt: MegaPromptItem) => void;

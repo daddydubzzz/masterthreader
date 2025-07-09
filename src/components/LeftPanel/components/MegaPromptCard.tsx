@@ -4,8 +4,6 @@ import { MegaPromptCardProps } from '../types';
 
 export function MegaPromptCard({ 
   megaPrompt, 
-  isSelected, 
-  onClick,
   onEdit,
   onToggleActive 
 }: MegaPromptCardProps) {
@@ -29,11 +27,10 @@ export function MegaPromptCard({
 
   return (
     <div
-      onClick={onClick}
-      className={`card-hover cursor-pointer p-4 rounded-xl border transition-all duration-200 ${
-        isSelected 
-          ? 'ring-2 ring-blue-500 border-blue-200 bg-blue-50' 
-          : 'border-gray-200 hover:border-gray-300'
+      className={`card-hover p-4 rounded-xl border transition-all duration-200 group ${
+        megaPrompt.isActive 
+          ? 'border-emerald-300 bg-emerald-50' 
+          : 'border-gray-200 bg-white opacity-60'
       }`}
     >
       {/* Header */}
@@ -41,7 +38,7 @@ export function MegaPromptCard({
         <h3 className="font-medium text-gray-900 text-sm">{megaPrompt.name}</h3>
         <div className="flex items-center gap-2">
           {megaPrompt.isActive && (
-            <div className="w-2 h-2 bg-emerald-500 rounded-full" title="Active"></div>
+            <div className="w-2 h-2 bg-emerald-500 rounded-full" title="Active - Will be used in generation"></div>
           )}
           <span className={`px-2 py-1 text-xs rounded-full border ${getCategoryColor(megaPrompt.category)}`}>
             {megaPrompt.category}
@@ -67,10 +64,7 @@ export function MegaPromptCard({
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           {onEdit && (
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit();
-              }}
+              onClick={onEdit}
               className="p-1 hover:bg-gray-100 rounded"
               title="Edit megaprompt"
             >
@@ -81,10 +75,7 @@ export function MegaPromptCard({
           )}
           {onToggleActive && (
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleActive();
-              }}
+              onClick={onToggleActive}
               className="p-1 hover:bg-gray-100 rounded"
               title={megaPrompt.isActive ? "Deactivate" : "Activate"}
             >

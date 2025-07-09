@@ -1,18 +1,10 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Thread } from '@/types';
-import { 
-  UseRightPanelReturn, 
-  EditCapture, 
-  LearningPattern, 
-  MegaPromptSuggestion, 
-  TrainingSession 
-} from '../types';
+import { UseRightPanelReturn, EditCapture, LearningPattern, MegaPromptSuggestion, TrainingSession } from '../types';
 
 export function useRightPanel(
-  generatedThreads?: Thread[],
-  originalScript?: string,
-  selectedMegaPrompt?: string,
-  onMegaPromptSuggestion?: (suggestion: string) => void
+  threads?: Thread[],
+  originalScript?: string
 ): UseRightPanelReturn {
   // State management
   const [editCaptures, setEditCaptures] = useState<EditCapture[]>([]);
@@ -21,151 +13,107 @@ export function useRightPanel(
   const [currentSession, setCurrentSession] = useState<TrainingSession | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Edit capture functionality
+  // Mock data for demonstration
+  useEffect(() => {
+    if (threads && threads.length > 0) {
+      // Mock some suggestions based on thread content
+      const mockSuggestions: MegaPromptSuggestion[] = [
+        {
+          id: 'suggestion-1',
+          type: 'addition',
+          category: 'style',
+          suggestedRule: 'Emphasize emotional hooks in thread openings',
+          reasoning: 'Detected pattern of successful threads starting with emotional elements',
+          basedOnEdits: ['edit-1', 'edit-2'],
+          confidence: 0.85,
+          priority: 'high'
+        },
+        {
+          id: 'suggestion-2',
+          type: 'modification',
+          category: 'core',
+          currentRule: 'Keep threads under 8 tweets',
+          suggestedRule: 'Optimize threads to 6-7 tweets for better engagement',
+          reasoning: 'Analysis shows shorter threads perform better in your style',
+          basedOnEdits: ['edit-3'],
+          confidence: 0.72,
+          priority: 'medium'
+        }
+      ];
+      setSuggestions(mockSuggestions);
+
+      // Mock learning patterns
+      const mockPatterns: LearningPattern[] = [
+        {
+          id: 'pattern-1',
+          patternType: 'style',
+          description: 'User prefers conversational tone with direct questions',
+          examples: ['What if I told you...', 'Here\'s the thing...'],
+          confidence: 0.9,
+          frequency: 12,
+          lastSeen: new Date()
+        }
+      ];
+      setLearningPatterns(mockPatterns);
+    }
+  }, [threads]);
+
+  // Event handlers
   const captureEdit = useCallback((edit: Omit<EditCapture, 'id' | 'timestamp'>) => {
     const newEdit: EditCapture = {
       ...edit,
-      id: `edit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `edit-${Date.now()}`,
       timestamp: new Date()
     };
-
-    setEditCaptures(prev => [newEdit, ...prev.slice(0, 19)]); // Keep last 20 edits
-
-    // Update current session
-    if (currentSession) {
-      setCurrentSession(prev => prev ? {
-        ...prev,
-        editsCount: prev.editsCount + 1
-      } : null);
-    }
-  }, [currentSession]);
-
-  // Process thread annotations to identify patterns
-  const processThreadAnnotations = useCallback(async (threads: Thread[]) => {
-    if (!threads?.length) return;
-
-    setIsProcessing(true);
-
-    try {
-      // Simulate AI pattern analysis
-      const response = await fetch('/api/analyze-patterns', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          threads,
-          originalScript,
-          megaPrompt: selectedMegaPrompt,
-          recentEdits: editCaptures.slice(0, 10)
-        })
-      });
-
-      if (response.ok) {
-        const { patterns } = await response.json();
-        
-        setLearningPatterns(prev => {
-          const newPatterns = patterns.filter((p: LearningPattern) => 
-            !prev.some(existing => existing.id === p.id)
-          );
-          return [...newPatterns, ...prev].slice(0, 15); // Keep top 15 patterns
-        });
-
-        // Update session
-        if (currentSession) {
-          setCurrentSession(prev => prev ? {
-            ...prev,
-            patternsIdentified: prev.patternsIdentified + patterns.length
-          } : null);
-        }
-      }
-    } catch (error) {
-      console.error('Pattern analysis failed:', error);
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [originalScript, selectedMegaPrompt, editCaptures, currentSession]);
-
-  // Generate megaprompt suggestions based on learned patterns
-  const generateSuggestions = useCallback(async () => {
-    if (editCaptures.length === 0 && learningPatterns.length === 0) return;
-
-    setIsProcessing(true);
-
-    try {
-      const response = await fetch('/api/generate-suggestions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          editCaptures: editCaptures.slice(0, 10),
-          learningPatterns: learningPatterns.slice(0, 5),
-          currentMegaPrompt: selectedMegaPrompt,
-          originalScript
-        })
-      });
-
-      if (response.ok) {
-        const { suggestions: newSuggestions } = await response.json();
-        
-        setSuggestions(prev => {
-          const filteredSuggestions = newSuggestions.filter((s: MegaPromptSuggestion) => 
-            !prev.some(existing => existing.id === s.id)
-          );
-          return [...filteredSuggestions, ...prev].slice(0, 10); // Keep top 10 suggestions
-        });
-
-        // Update session
-        if (currentSession) {
-          setCurrentSession(prev => prev ? {
-            ...prev,
-            suggestionsGenerated: prev.suggestionsGenerated + newSuggestions.length
-          } : null);
-        }
-      }
-    } catch (error) {
-      console.error('Suggestion generation failed:', error);
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [editCaptures, learningPatterns, selectedMegaPrompt, originalScript, currentSession]);
-
-  // Apply a learning pattern
-  const applyPattern = useCallback((patternId: string) => {
-    const pattern = learningPatterns.find(p => p.id === patternId);
-    if (pattern) {
-      // Increase pattern frequency and update last seen
-      setLearningPatterns(prev => 
-        prev.map(p => 
-          p.id === patternId 
-            ? { ...p, frequency: p.frequency + 1, lastSeen: new Date() }
-            : p
-        )
-      );
-    }
-  }, [learningPatterns]);
-
-  // Accept a megaprompt suggestion
-  const acceptSuggestion = useCallback((suggestionId: string) => {
-    const suggestion = suggestions.find(s => s.id === suggestionId);
-    if (suggestion) {
-      // Call the callback to update the megaprompt
-      onMegaPromptSuggestion?.(suggestion.suggestedRule);
-      
-      // Remove the accepted suggestion
-      setSuggestions(prev => prev.filter(s => s.id !== suggestionId));
-    }
-  }, [suggestions, onMegaPromptSuggestion]);
-
-  // Reject a suggestion
-  const rejectSuggestion = useCallback((suggestionId: string) => {
-    setSuggestions(prev => prev.filter(s => s.id !== suggestionId));
+    setEditCaptures(prev => [newEdit, ...prev].slice(0, 50)); // Keep last 50 edits
   }, []);
 
-  // Training session management
+  const processThreadAnnotations = useCallback(async (threadsToProcess: Thread[]) => {
+    setIsProcessing(true);
+    try {
+      // Mock processing delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Mock processing results
+      console.log('Processing threads for annotations:', threadsToProcess.length);
+      
+    } catch (error) {
+      console.error('Error processing thread annotations:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  }, []);
+
+  const generateSuggestions = useCallback(async () => {
+    setIsProcessing(true);
+    try {
+      // Mock suggestion generation
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      console.log('Generated new suggestions based on patterns');
+    } catch (error) {
+      console.error('Error generating suggestions:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  }, []);
+
+  const applyPattern = useCallback((patternId: string) => {
+    console.log('Applying pattern:', patternId);
+    // Implementation for applying a learned pattern
+  }, []);
+
+  const acceptSuggestion = useCallback((suggestionId: string) => {
+    setSuggestions(prev => prev.filter(s => s.id !== suggestionId));
+    console.log('Accepted suggestion:', suggestionId);
+  }, []);
+
+  const rejectSuggestion = useCallback((suggestionId: string) => {
+    setSuggestions(prev => prev.filter(s => s.id !== suggestionId));
+    console.log('Rejected suggestion:', suggestionId);
+  }, []);
+
   const startTrainingSession = useCallback(() => {
-    const session: TrainingSession = {
+    const newSession: TrainingSession = {
       id: `session-${Date.now()}`,
       startTime: new Date(),
       editsCount: 0,
@@ -173,40 +121,19 @@ export function useRightPanel(
       suggestionsGenerated: 0,
       scriptsProcessed: originalScript ? [originalScript] : []
     };
-    setCurrentSession(session);
+    setCurrentSession(newSession);
   }, [originalScript]);
 
   const endTrainingSession = useCallback(() => {
     if (currentSession) {
-      setCurrentSession(prev => prev ? {
-        ...prev,
+      const updatedSession = {
+        ...currentSession,
         endTime: new Date()
-      } : null);
-      
-      // Clear session after a brief delay to show completion
-      setTimeout(() => {
-        setCurrentSession(null);
-      }, 3000);
+      };
+      setCurrentSession(null);
+      console.log('Training session ended:', updatedSession);
     }
   }, [currentSession]);
-
-  // Auto-start training session when threads are generated
-  useEffect(() => {
-    if (generatedThreads && generatedThreads.length > 0 && !currentSession) {
-      startTrainingSession();
-    }
-  }, [generatedThreads, currentSession, startTrainingSession]);
-
-  // Auto-generate suggestions when patterns are updated
-  useEffect(() => {
-    if (learningPatterns.length > 0 && editCaptures.length > 2) {
-      const timer = setTimeout(() => {
-        generateSuggestions();
-      }, 2000); // Debounce suggestions generation
-
-      return () => clearTimeout(timer);
-    }
-  }, [learningPatterns.length, editCaptures.length, generateSuggestions]);
 
   return {
     editCaptures,

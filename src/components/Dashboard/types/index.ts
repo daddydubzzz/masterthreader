@@ -1,25 +1,16 @@
 import { Thread, MegaPrompt } from '@/types';
+import { MegaPromptItem } from '@/components/LeftPanel/types';
 
 // Main Dashboard props
 export interface DashboardProps {
   className?: string;
 }
 
-// Dashboard state management
-export interface DashboardState {
-  selectedMegaPrompt?: string;
-  generatedThreads?: Thread[];
-  originalScript?: string;
-  currentMegaPrompt?: MegaPrompt;
-}
-
 // Hook return types
 export interface UseDashboardReturn {
-  selectedMegaPrompt?: string;
-  generatedThreads?: Thread[];
-  originalScript?: string;
-  currentMegaPrompt?: MegaPrompt;
-  handleMegaPromptSelect: (megaPromptId: string) => void;
+  threads: Thread[];
+  megaPrompt: MegaPrompt | undefined;
+  originalScript: string;
   handleThreadsGenerated: (threads: Thread[], megaPrompt: MegaPrompt, script: string) => void;
-  handleMegaPromptSuggestion: (suggestion: string) => void;
+  handleMegaPromptChange: (megaPrompt: MegaPromptItem) => void;
 } 
