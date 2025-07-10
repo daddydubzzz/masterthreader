@@ -73,10 +73,20 @@ export async function middleware(request: NextRequest) {
     process.env.ALLOWED_EMAIL_2,
   ].filter(Boolean) as string[]
 
+  // Debug logging (only for troubleshooting)
+  console.log('🔍 Middleware Debug:');
+  console.log('  Path:', request.nextUrl.pathname);
+  console.log('  User:', user?.email || 'No user');
+  console.log('  Allowed emails:', allowedEmails);
+  console.log('  Email check:', user?.email ? allowedEmails.includes(user.email.toLowerCase()) : 'No email');
+
   if (!user || !allowedEmails.includes(user.email?.toLowerCase() || '')) {
+    console.log('❌ Redirecting to login');
     // Redirect to login page
     return NextResponse.redirect(new URL('/auth/login', request.url))
   }
+
+  console.log('✅ Middleware passed');
 
   return response
 }

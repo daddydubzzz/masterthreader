@@ -45,15 +45,24 @@ export default function AuthCallbackPage() {
             process.env.NEXT_PUBLIC_ALLOWED_EMAIL_2,
           ].filter(Boolean) as string[]
 
+          // Debug logging
+          console.log('🔍 Auth Callback Debug:');
+          console.log('  User email:', user.email);
+          console.log('  Allowed emails:', allowedEmails);
+          console.log('  Email check:', allowedEmails.includes(user.email.toLowerCase()));
+
           // If no allowed emails are configured, allow all authenticated users
           if (allowedEmails.length === 0) {
             console.warn('No allowed emails configured - allowing all authenticated users')
           }
 
           if (allowedEmails.length > 0 && !allowedEmails.includes(user.email.toLowerCase())) {
+            console.error('❌ Email not in allowed list');
             await supabase.auth.signOut()
             throw new Error('Email not authorized for this application')
           }
+
+          console.log('✅ Email validation passed');
 
           setStatus('success')
           setMessage('Authentication successful! Redirecting...')
