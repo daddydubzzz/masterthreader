@@ -69,36 +69,33 @@ export function Tweet({
   const cleanContent = content.replace(/^\d+\/\d+\s/, '');
 
   return (
-    <div className="group relative border border-gray-100 rounded-2xl p-5 hover:border-gray-200 hover:bg-gray-50/30 transition-all duration-200">
+    <div className="group relative border border-gray-100 rounded-xl p-4 hover:border-gray-200 hover:bg-gray-50/50 transition-all duration-200">
       {/* Tweet Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-medium text-sm">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300 shadow-sm flex items-center justify-center text-gray-700 font-semibold text-sm hover:shadow-md transition-all duration-200">
             {tweetNumber}
           </div>
-          <span className="text-sm font-medium text-gray-600">
-            Tweet {tweetNumber}
-          </span>
         </div>
         
         {/* Tweet Actions */}
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
           {!isEditing && (
             <>
               <button
                 onClick={onStartEdit}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors font-medium"
+                className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
               >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
                   <path d="M8.75 2.75L11.25 5.25L4.375 12.125H1.875V9.625L8.75 2.75Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
                 Edit
               </button>
               <button
                 onClick={() => setShowAnnotationBox(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+                className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
               >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
                   <path d="M7 12.25C9.89873 12.25 12.25 9.89873 12.25 7C12.25 4.10127 9.89873 1.75 7 1.75C4.10127 1.75 1.75 4.10127 1.75 7C1.75 8.19469 2.18164 9.29002 2.89062 10.1484L1.75 12.25L7 12.25Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
                 Comment
@@ -124,7 +121,7 @@ export function Tweet({
             {/* Character Count */}
             <div className="absolute bottom-3 right-3 text-xs font-medium">
               <span className={`
-                ${isOverLimit ? 'text-red-600' : isNearLimit ? 'text-amber-600' : 'text-gray-400'}
+                ${isOverLimit ? 'text-red-600' : isNearLimit ? 'text-orange-600' : 'text-gray-400'}
               `}>
                 {characterCount}/280
               </span>
@@ -155,12 +152,12 @@ export function Tweet({
       ) : (
         <div
           onClick={onStartEdit}
-          className="cursor-text p-4 rounded-xl hover:bg-white/80 transition-all duration-200 border border-transparent hover:border-gray-100"
+          className="cursor-text p-3 rounded-lg hover:bg-gray-50 transition-all duration-200 border border-transparent hover:border-gray-100"
         >
-          <p className="text-gray-900 leading-relaxed whitespace-pre-wrap text-[15px] tracking-tight">
+          <p className="text-gray-900 leading-relaxed whitespace-pre-wrap text-base">
             {cleanContent}
           </p>
-          <div className="mt-3 text-xs text-gray-400 font-medium">
+          <div className="mt-2 text-xs text-gray-400">
             {content.length} characters
           </div>
         </div>
@@ -168,21 +165,21 @@ export function Tweet({
 
       {/* Annotations Display */}
       {annotations.length > 0 && (
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 space-y-2">
           {annotations.map((annotation) => (
             <div
               key={annotation.id}
-              className="bg-amber-50/50 border border-amber-200/60 rounded-xl p-4 backdrop-blur-sm"
+              className="bg-gray-50 border border-gray-200 rounded-lg p-3"
             >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-amber-700 uppercase tracking-wide">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
                   {annotation.type}
                 </span>
-                <span className="text-xs text-gray-500 font-medium">
+                <span className="text-xs text-gray-400">
                   {annotation.timestamp.toLocaleTimeString()}
                 </span>
               </div>
-              <p className="text-sm text-amber-900 leading-relaxed">
+              <p className="text-sm text-gray-800 leading-relaxed">
                 {annotation.text}
               </p>
             </div>

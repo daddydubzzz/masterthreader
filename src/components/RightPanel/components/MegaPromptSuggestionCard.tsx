@@ -38,7 +38,7 @@ export function MegaPromptSuggestionCard({
 
   const getConfidenceColor = (confidence: number) => {
     if (confidence >= 0.8) return 'text-green-600 bg-green-100';
-    if (confidence >= 0.6) return 'text-yellow-600 bg-yellow-100';
+    if (confidence >= 0.6) return 'text-orange-600 bg-orange-100';
     return 'text-red-600 bg-red-100';
   };
 

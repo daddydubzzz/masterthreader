@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { signInWithMagicLink } from '@/lib/supabase'
+import { Logo } from '@/components/ui/Logo'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -28,54 +29,44 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-25 via-white to-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-cream-25 via-cream-50 to-cream-100 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         {/* Logo */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-12">
           <div className="flex justify-center mb-4">
-            <div className="relative">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-xl tracking-tight">MT</span>
-              </div>
-              <div className="absolute -inset-2 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl opacity-20 blur-sm"></div>
-            </div>
+            <Logo 
+              size="xxl" 
+              className="transition-all duration-300 hover:scale-105"
+            />
           </div>
-          <h1 className="text-3xl font-bold gradient-text mb-2">MasterThreader</h1>
-          <p className="text-gray-600">AI-Powered Thread Generation</p>
+          <h1 className="text-6xl font-light gradient-text tracking-wide leading-none" style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif', letterSpacing: '0.05em' }}>
+            Threader
+          </h1>
         </div>
 
         {/* Login Form */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
-            Sign In
-          </h2>
-          
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                placeholder="Enter your email"
-                required
-                disabled={isLoading}
-              />
-            </div>
+        <div className="card-premium rounded-2xl shadow-2xl p-8 animate-slide-up bg-gradient-to-br from-cream-50/90 to-cream-100/90 border border-gold-200/50">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <input
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="input w-full px-4 py-4 border border-gold-200 rounded-xl focus:ring-2 focus:ring-gold-500 focus:border-transparent transition-all duration-200 text-platinum-900 placeholder-platinum-400 bg-cream-50/50 text-center"
+              placeholder="Enter your email"
+              required
+              disabled={isLoading}
+            />
 
             <button
               type="submit"
-              disabled={isLoading}
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-blue-800 focus:ring-4 focus:ring-blue-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isLoading || !email.trim()}
+              className="btn btn-primary w-full py-4 px-4 rounded-xl font-semibold text-base transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-gold-600 to-gold-700 hover:from-gold-700 hover:to-gold-800 focus:ring-4 focus:ring-gold-200 shadow-lg text-white"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Sending Magic Link...
+                  Sending...
                 </div>
               ) : (
                 'Send Magic Link'
@@ -93,18 +84,6 @@ export default function LoginPage() {
               <p className="text-sm">{message}</p>
             </div>
           )}
-
-          {/* Info */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-500">
-              Access is restricted to authorized users only.
-            </p>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-8 text-sm text-gray-500">
-          <p>Secure authentication via magic link</p>
         </div>
       </div>
     </div>

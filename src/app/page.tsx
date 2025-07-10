@@ -1,6 +1,7 @@
 'use client';
 
 import { Dashboard } from '@/components/Dashboard';
+import { Logo } from '@/components/ui/Logo';
 import { useEffect, useState } from 'react';
 import { getCurrentUser, signOut } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
@@ -42,38 +43,37 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-25 via-white to-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Logo size="lg" className="mb-6 animate-bounce-in" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading Threader...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-25 via-white to-gray-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Navigation */}
       <nav className="nav-glass fixed top-0 left-0 right-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <div className="relative">
-                <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
-                  <span className="text-white font-bold text-sm tracking-tight">MT</span>
-                </div>
-                <div className="absolute -inset-1 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl opacity-20 blur-sm"></div>
-              </div>
-              <div>
-                <h1 className="text-xl font-semibold gradient-text tracking-tight">MasterThreader</h1>
-              </div>
-            </div>
+            <Logo 
+              size="sm" 
+              showText 
+              variant="glass"
+              className="transition-all duration-300 hover:scale-105"
+            />
             
             {/* User Menu */}
-            <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-600">
+            <div className="flex items-center space-x-6">
+              <div className="text-sm text-gray-600 font-medium">
                 {user?.email}
               </div>
               <button
                 onClick={handleLogout}
-                className="text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200"
+                className="text-sm text-gray-700 hover:text-gray-900 transition-all duration-200 font-medium px-3 py-1.5 rounded-lg hover:bg-white/50 border border-transparent hover:border-gray-200"
               >
                 Sign Out
               </button>

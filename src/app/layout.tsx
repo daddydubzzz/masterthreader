@@ -17,14 +17,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MasterThreader | AI Copy Refinement Engine",
-  description: "Transform your scripts into viral Twitter threads with AI-powered thread generation and refinement system.",
-  keywords: ["twitter threads", "ai copywriting", "content creation", "social media", "thread generator"],
-  authors: [{ name: "MasterThreader Team" }],
+  title: "Threader | Premium AI Thread Creation",
+  description: "Elevate your content with luxury AI-powered thread generation. Transform scripts into premium Twitter threads with diamond-grade precision.",
+  keywords: ["twitter threads", "premium ai", "luxury content", "thread creation", "social media", "ai copywriting"],
+  authors: [{ name: "Threader Team" }],
   robots: "index, follow",
   openGraph: {
-    title: "MasterThreader | AI Copy Refinement Engine",
-    description: "Transform your scripts into viral Twitter threads with AI-powered generation and refinement.",
+    title: "Threader | Premium AI Thread Creation",
+    description: "Elevate your content with luxury AI-powered thread generation. Diamond-grade precision for premium threads.",
     type: "website",
   },
 };

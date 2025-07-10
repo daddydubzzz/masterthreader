@@ -34,7 +34,7 @@ export function RightPanel({
   );
 
   return (
-    <div className="h-full bg-purple-50 flex flex-col">
+    <div className="h-full bg-gray-50 flex flex-col">
       {/* Main Content */}
       <div className="flex-1 p-4 overflow-y-auto">
         <div className="space-y-6">
@@ -296,16 +296,16 @@ export function RightPanel({
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-xs font-bold text-purple-600">2</span>
+                  <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-xs font-bold text-green-600">2</span>
                   </div>
                   <div className="text-xs text-gray-600">
                     <span className="font-medium">Improve current</span> - Get better versions now
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-xs font-bold text-indigo-600">3</span>
+                  <div className="w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-xs font-bold text-gray-600">3</span>
                   </div>
                   <div className="text-xs text-gray-600">
                     <span className="font-medium">Train future</span> - Teach AI for next time

@@ -1,29 +1,63 @@
 @import "tailwindcss";
 
-/* Design System Variables - 2025 Premium Theme */
+/* Design System Variables - Threader Premium Theme */
 :root {
-  /* Color Palette - Minimalist Professional */
-  --color-gray-25: #fcfcfd;
-  --color-gray-50: #f8fafc;
-  --color-gray-100: #f1f5f9;
-  --color-gray-200: #e2e8f0;
-  --color-gray-300: #cbd5e1;
-  --color-gray-400: #94a3b8;
-  --color-gray-500: #64748b;
-  --color-gray-600: #475569;
-  --color-gray-700: #334155;
-  --color-gray-800: #1e293b;
-  --color-gray-900: #0f172a;
-  --color-gray-950: #020617;
+  /* Color Palette - Luxury Gold & Diamond (for branding) */
+  --color-cream-25: #fffef7;
+  --color-cream-50: #fffbf0;
+  --color-cream-100: #fef7e7;
+  --color-cream-200: #fdefd1;
+  --color-cream-300: #fbe2a8;
+  --color-cream-400: #f7d070;
+  --color-cream-500: #f3c242;
+  --color-cream-600: #e5a916;
+  --color-cream-700: #c18a0e;
+  --color-cream-800: #9c6f10;
+  --color-cream-900: #7f5a11;
+  --color-cream-950: #452f05;
 
-  /* Primary Brand Colors */
+  /* Primary Gold Colors (for branding) */
+  --color-gold-50: #fffdf2;
+  --color-gold-100: #fefce8;
+  --color-gold-200: #fef9c3;
+  --color-gold-300: #fef08a;
+  --color-gold-400: #fde047;
+  --color-gold-500: #eab308;
+  --color-gold-600: #ca8a04;
+  --color-gold-700: #a16207;
+  --color-gold-800: #854d0e;
+  --color-gold-900: #713f12;
+
+  /* Clean Content Colors */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+
+  /* Accent Colors for Interaction */
   --color-blue-50: #eff6ff;
   --color-blue-100: #dbeafe;
   --color-blue-500: #3b82f6;
   --color-blue-600: #2563eb;
   --color-blue-700: #1d4ed8;
-  --color-blue-800: #1e40af;
-  --color-blue-900: #1e3a8a;
+
+  /* Diamond/Platinum Accents (legacy) */
+  --color-platinum-50: #f8fafc;
+  --color-platinum-100: #f1f5f9;
+  --color-platinum-200: #e2e8f0;
+  --color-platinum-300: #cbd5e1;
+  --color-platinum-400: #94a3b8;
+  --color-platinum-500: #64748b;
+  --color-platinum-600: #475569;
+  --color-platinum-700: #334155;
+  --color-platinum-800: #1e293b;
+  --color-platinum-900: #0f172a;
 
   /* Accent Colors */
   --color-emerald-50: #ecfdf5;
@@ -96,7 +130,7 @@ body {
   font-size: var(--font-size-base);
   line-height: 1.6;
   color: var(--color-gray-900);
-  background-color: var(--color-gray-25);
+  background-color: #fafafa;
   font-feature-settings: 'cv11', 'ss01';
   font-variation-settings: 'opsz' 32;
 }
@@ -160,33 +194,34 @@ p {
 }
 
 .btn-primary {
-  background-color: var(--color-blue-600);
+  background: linear-gradient(135deg, var(--color-gold-600), var(--color-gold-700));
   color: white;
-  box-shadow: 0 1px 2px 0 rgb(59 130 246 / 0.15);
+  box-shadow: 0 1px 2px 0 rgb(234 179 8 / 0.15);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: var(--color-blue-700);
+  background: linear-gradient(135deg, var(--color-gold-700), var(--color-gold-800));
 }
 
 .btn-secondary {
   background-color: white;
-  color: var(--color-gray-700);
-  border: 1px solid var(--color-gray-200);
+  color: #374151;
+  border: 1px solid #d1d5db;
   box-shadow: var(--shadow-sm);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: var(--color-gray-50);
+  background-color: #f9fafb;
+  border-color: #9ca3af;
 }
 
 .btn-ghost {
-  color: var(--color-gray-600);
+  color: #6b7280;
 }
 
 .btn-ghost:hover:not(:disabled) {
-  color: var(--color-gray-900);
-  background-color: var(--color-gray-100);
+  color: #111827;
+  background-color: #f3f4f6;
 }
 
 .btn-danger {
@@ -211,7 +246,7 @@ p {
 .card {
   background-color: white;
   border-radius: var(--radius-xl);
-  border: 1px solid rgb(226 232 240 / 0.6);
+  border: 1px solid #e5e7eb;
   box-shadow: var(--shadow-sm);
 }
 
@@ -221,16 +256,16 @@ p {
 
 .card-hover:hover {
   box-shadow: var(--shadow-md);
-  border-color: rgb(203 213 225 / 0.6);
+  border-color: #d1d5db;
 }
 
 .card-premium {
-  background: linear-gradient(to bottom right, white, rgb(248 250 252 / 0.8));
-  border: 1px solid rgb(203 213 225 / 0.4);
+  background: linear-gradient(135deg, var(--color-cream-50), var(--color-cream-100));
+  border: 1px solid rgb(234 179 8 / 0.2);
   box-shadow: 
-    0 20px 25px -5px rgb(0 0 0 / 0.08), 
-    0 8px 10px -6px rgb(0 0 0 / 0.06),
-    0 0 0 1px rgb(255 255 255 / 0.7) inset;
+    0 20px 25px -5px rgb(234 179 8 / 0.08), 
+    0 8px 10px -6px rgb(234 179 8 / 0.06),
+    0 0 0 1px rgb(255 254 247 / 0.7) inset;
   backdrop-filter: blur(8px);
 }
 
@@ -239,42 +274,42 @@ p {
   width: 100%;
   padding: 0.75rem 1rem;
   background-color: white;
-  border: 1px solid var(--color-gray-200);
+  border: 1px solid #d1d5db;
   border-radius: var(--radius-lg);
-  color: var(--color-gray-900);
+  color: #111827;
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .input::placeholder {
-  color: var(--color-gray-500);
+  color: #9ca3af;
 }
 
 .input:focus {
   outline: none;
-  border-color: var(--color-blue-500);
-  box-shadow: 0 0 0 3px rgb(59 130 246 / 0.2);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgb(59 130 246 / 0.1);
 }
 
 .textarea {
   width: 100%;
   padding: 1rem 1.25rem;
   background-color: white;
-  border: 1px solid var(--color-gray-200);
+  border: 1px solid #d1d5db;
   border-radius: var(--radius-lg);
-  color: var(--color-gray-900);
+  color: #111827;
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
   resize: none;
   min-height: 120px;
 }
 
 .textarea::placeholder {
-  color: var(--color-gray-500);
+  color: #9ca3af;
 }
 
 .textarea:focus {
   outline: none;
-  border-color: var(--color-blue-500);
-  box-shadow: 0 0 0 3px rgb(59 130 246 / 0.2);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgb(59 130 246 / 0.1);
 }
 
 /* Navigation */
@@ -284,9 +319,10 @@ p {
   left: 0;
   right: 0;
   z-index: 50;
-  background: rgba(255, 255, 255, 0.95);
+  background: linear-gradient(135deg, rgba(255, 254, 247, 0.92) 0%, rgba(255, 251, 240, 0.92) 100%);
   backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+  border-bottom: 1px solid rgba(234, 179, 8, 0.2);
+  box-shadow: 0 1px 3px rgba(234, 179, 8, 0.1);
 }
 
 /* Animations */
@@ -302,6 +338,18 @@ p {
   animation: scaleIn 0.2s ease-out;
 }
 
+.animate-bounce-in {
+  animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.4s ease-out;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.4s ease-out;
+}
+
 /* Status Indicators */
 .status-dot {
   width: 0.5rem;
@@ -310,13 +358,13 @@ p {
 }
 
 .status-success { background-color: var(--color-emerald-500); }
-.status-warning { background-color: var(--color-amber-500); }
+.status-warning { background-color: #f97316; }
 .status-error { background-color: var(--color-red-500); }
-.status-info { background-color: var(--color-blue-500); }
+.status-info { background-color: #3b82f6; }
 
 /* Loading States */
 .skeleton {
-  background-color: var(--color-gray-200);
+  background-color: #e5e7eb;
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   border-radius: 0.25rem;
 }
@@ -324,8 +372,8 @@ p {
 .spinner {
   animation: spin 1s linear infinite;
   border-radius: 50%;
-  border: 2px solid var(--color-gray-200);
-  border-top-color: var(--color-blue-600);
+  border: 2px solid #e5e7eb;
+  border-top-color: #3b82f6;
 }
 
 /* Utilities */
@@ -342,8 +390,40 @@ p {
   display: none;
 }
 
+/* Accent Classes for Strategic Color Usage */
+.accent-border {
+  border-color: var(--color-blue-500);
+}
+
+.accent-border-hover:hover {
+  border-color: var(--color-blue-600);
+}
+
+.accent-bg {
+  background-color: var(--color-blue-50);
+}
+
+.accent-bg-hover:hover {
+  background-color: var(--color-blue-100);
+}
+
+.accent-text {
+  color: var(--color-blue-600);
+}
+
+.accent-text-hover:hover {
+  color: var(--color-blue-700);
+}
+
 .gradient-text {
-  background: linear-gradient(to right, var(--color-gray-900), var(--color-gray-800), var(--color-gray-700));
+  background: linear-gradient(135deg, var(--color-gray-700), var(--color-gray-800));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.gradient-text-platinum {
+  background: linear-gradient(135deg, var(--color-platinum-700), var(--color-platinum-600), var(--color-platinum-500));
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
@@ -351,7 +431,7 @@ p {
 
 .gradient-border {
   background: linear-gradient(white, white) padding-box,
-              linear-gradient(135deg, var(--color-blue-600), rgb(147 197 253)) border-box;
+              linear-gradient(135deg, #3b82f6, #60a5fa) border-box;
   border: 1px solid transparent;
 }
 
@@ -390,4 +470,44 @@ p {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
