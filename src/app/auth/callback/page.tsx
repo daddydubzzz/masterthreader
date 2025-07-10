@@ -16,64 +16,75 @@ export default function AuthCallbackPage() {
           throw new Error('Supabase client not initialized')
         }
 
-        // Get the hash from the URL
-        const hashParams = new URLSearchParams(window.location.hash.substring(1))
-        const accessToken = hashParams.get('access_token')
-        const refreshToken = hashParams.get('refresh_token')
+        // Get the current URL to check for auth tokens
+        const url = new URL(window.location.href)
+        const code = url.searchParams.get('code')
+        const error = url.searchParams.get('error')
+        const errorDescription = url.searchParams.get('error_description')
 
-        if (accessToken && refreshToken) {
-          // Set the session
-          const { error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          })
+        console.log('🔍 Callback URL Debug:');
+        console.log('  Full URL:', window.location.href);
+        console.log('  Code:', code);
+        console.log('  Error:', error);
+        console.log('  Error description:', errorDescription);
 
-          if (error) {
-            throw error
-          }
-
-          // Get user info to verify email is allowed
-          const { data: { user } } = await supabase.auth.getUser()
-          
-          if (!user?.email) {
-            throw new Error('No user email found')
-          }
-
-          // Check if email is in allowed list
-          const allowedEmails = [
-            process.env.NEXT_PUBLIC_ALLOWED_EMAIL_1,
-            process.env.NEXT_PUBLIC_ALLOWED_EMAIL_2,
-          ].filter(Boolean) as string[]
-
-          // Debug logging
-          console.log('🔍 Auth Callback Debug:');
-          console.log('  User email:', user.email);
-          console.log('  Allowed emails:', allowedEmails);
-          console.log('  Email check:', allowedEmails.includes(user.email.toLowerCase()));
-
-          // If no allowed emails are configured, allow all authenticated users
-          if (allowedEmails.length === 0) {
-            console.warn('No allowed emails configured - allowing all authenticated users')
-          }
-
-          if (allowedEmails.length > 0 && !allowedEmails.includes(user.email.toLowerCase())) {
-            console.error('❌ Email not in allowed list');
-            await supabase.auth.signOut()
-            throw new Error('Email not authorized for this application')
-          }
-
-          console.log('✅ Email validation passed');
-
-          setStatus('success')
-          setMessage('Authentication successful! Redirecting...')
-          
-          // Redirect to home page after a short delay
-          setTimeout(() => {
-            router.push('/')
-          }, 2000)
-        } else {
-          throw new Error('No authentication tokens found')
+        if (error) {
+          throw new Error(errorDescription || error)
         }
+
+        let user = null
+
+        if (code) {
+          // Exchange code for session (PKCE flow)
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+          
+          if (exchangeError) {
+            throw exchangeError
+          }
+
+          user = data.user
+        } else {
+          // Try to get existing session (fallback)
+          const { data: { user: existingUser } } = await supabase.auth.getUser()
+          user = existingUser
+        }
+
+        if (!user?.email) {
+          throw new Error('No user email found')
+        }
+
+        // Check if email is in allowed list
+        const allowedEmails = [
+          process.env.NEXT_PUBLIC_ALLOWED_EMAIL_1,
+          process.env.NEXT_PUBLIC_ALLOWED_EMAIL_2,
+        ].filter(Boolean) as string[]
+
+        // Debug logging
+        console.log('🔍 Auth Callback Debug:');
+        console.log('  User email:', user.email);
+        console.log('  Allowed emails:', allowedEmails);
+        console.log('  Email check:', allowedEmails.includes(user.email.toLowerCase()));
+
+        // If no allowed emails are configured, allow all authenticated users
+        if (allowedEmails.length === 0) {
+          console.warn('No allowed emails configured - allowing all authenticated users')
+        }
+
+        if (allowedEmails.length > 0 && !allowedEmails.includes(user.email.toLowerCase())) {
+          console.error('❌ Email not in allowed list');
+          await supabase.auth.signOut()
+          throw new Error('Email not authorized for this application')
+        }
+
+        console.log('✅ Email validation passed');
+
+        setStatus('success')
+        setMessage('Authentication successful! Redirecting...')
+        
+        // Redirect to home page after a short delay
+        setTimeout(() => {
+          router.push('/')
+        }, 2000)
       } catch (error) {
         console.error('Auth callback error:', error)
         setStatus('error')
