@@ -88,13 +88,13 @@ export function ThreadCard({ thread, threadIndex, onThreadUpdated }: ThreadCardP
 
   return (
     <article className="bg-white border border-gray-200 rounded-2xl overflow-hidden hover:border-gray-300 transition-all duration-200 group">
-      {/* Thread Header */}
-      <header className="bg-gray-50 border-b border-gray-200 p-6">
+      {/* Thread Header - Entire header is clickable */}
+      <header 
+        className="bg-gray-50 border-b border-gray-200 p-6 cursor-pointer hover:bg-gray-100/50 transition-colors duration-200"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
         <div className="flex items-center justify-between">
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center gap-4 text-gray-800 hover:text-gray-900 transition-colors group/button"
-          >
+          <div className="flex items-center gap-4 text-gray-800 group/button">
             <div className="relative">
               <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center text-gray-600 group-hover/button:bg-gray-200 transition-colors duration-200">
                 {styleConfig.icon}
@@ -117,7 +117,7 @@ export function ThreadCard({ thread, threadIndex, onThreadUpdated }: ThreadCardP
                 )}
               </div>
             </div>
-          </button>
+          </div>
           
           {/* Status Badges */}
           {hasChanges && (

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { TweetProps } from '../types';
 import { AnnotationBox } from './AnnotationBox';
+import { Annotation } from '@/types';
 
 export function Tweet({
   content,
@@ -18,48 +19,90 @@ export function Tweet({
   const [showAnnotationBox, setShowAnnotationBox] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-resize textarea
+  // Update editedContent when content prop changes
+  useEffect(() => {
+    setEditedContent(content);
+  }, [content]);
+
+  // Auto-resize textarea to exactly fit content - no scrolling ever
+  useEffect(() => {
+    const adjustHeight = () => {
+      if (textareaRef.current) {
+        const textarea = textareaRef.current;
+        // Reset height to auto to calculate natural height
+        textarea.style.height = 'auto';
+        // Calculate the height needed for the content
+        const scrollHeight = textarea.scrollHeight;
+        // Set height with a minimum of 60px
+        textarea.style.height = Math.max(scrollHeight, 60) + 'px';
+      }
+    };
+
+    // Small delay to ensure DOM is ready
+    const timeoutId = setTimeout(adjustHeight, 0);
+    return () => clearTimeout(timeoutId);
+  }, [editedContent, content]); // Also depend on content to handle initial load
+
+  // Auto-focus when component mounts and handle editing state
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+      const textarea = textareaRef.current;
+      
+      const handleFocus = () => {
+        onStartEdit();
+      };
+      
+      const handleBlur = () => {
+        // Small delay to allow for potential re-focus
+        setTimeout(() => {
+          if (document.activeElement !== textarea) {
+            onEndEdit();
+          }
+        }, 100);
+      };
+      
+      textarea.addEventListener('focus', handleFocus);
+      textarea.addEventListener('blur', handleBlur);
+      
+      return () => {
+        textarea.removeEventListener('focus', handleFocus);
+        textarea.removeEventListener('blur', handleBlur);
+      };
     }
-  }, [editedContent]);
-
-  // Focus and select text when starting edit
-  useEffect(() => {
-    if (isEditing && textareaRef.current) {
-      textareaRef.current.focus();
-      textareaRef.current.select();
-    }
-  }, [isEditing]);
+  }, [onStartEdit, onEndEdit]);
 
   const handleSaveEdit = () => {
-    onTweetEdited(editedContent);
-    onEndEdit();
+    if (editedContent !== content) {
+      onTweetEdited(editedContent);
+    }
   };
 
   const handleCancelEdit = () => {
     setEditedContent(content);
-    onEndEdit();
+    if (textareaRef.current) {
+      textareaRef.current.blur();
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && e.metaKey) {
       e.preventDefault();
       handleSaveEdit();
+      if (textareaRef.current) {
+        textareaRef.current.blur();
+      }
     } else if (e.key === 'Escape') {
       e.preventDefault();
       handleCancelEdit();
     }
   };
 
-  const handleAnnotationSave = (text: string, type: 'improvement' | 'clarification' | 'style') => {
+  const handleAnnotationSave = (text: string, type: Annotation['type']) => {
     onAnnotationAdded(text, type);
     setShowAnnotationBox(false);
   };
 
-  // Calculate character count
+  // Simple character count calculations
   const characterCount = editedContent.length;
   const isOverLimit = characterCount > 280;
   const isNearLimit = characterCount > 250;
@@ -80,110 +123,98 @@ export function Tweet({
         
         {/* Tweet Actions */}
         <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-          {!isEditing && (
-            <>
-              <button
-                onClick={onStartEdit}
-                className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
-              >
-                <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                  <path d="M8.75 2.75L11.25 5.25L4.375 12.125H1.875V9.625L8.75 2.75Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                Edit
-              </button>
-              <button
-                onClick={() => setShowAnnotationBox(true)}
-                className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
-              >
-                <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                  <path d="M7 12.25C9.89873 12.25 12.25 9.89873 12.25 7C12.25 4.10127 9.89873 1.75 7 1.75C4.10127 1.75 1.75 4.10127 1.75 7C1.75 8.19469 2.18164 9.29002 2.89062 10.1484L1.75 12.25L7 12.25Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                Comment
-              </button>
-            </>
-          )}
+          <button
+            onClick={() => setShowAnnotationBox(true)}
+            className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+          >
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+              <path d="M7 12.25C9.89873 12.25 12.25 9.89873 12.25 7C12.25 4.10127 9.89873 1.75 7 1.75C4.10127 1.75 1.75 4.10127 1.75 7C1.75 8.19469 2.18164 9.29002 2.89062 10.1484L1.75 12.25L7 12.25Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Comment
+          </button>
         </div>
       </div>
 
-      {/* Tweet Content */}
-      {isEditing ? (
-        <div className="space-y-4">
-          <div className="relative">
-            <textarea
-              ref={textareaRef}
-              value={editedContent}
-              onChange={(e) => setEditedContent(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none text-gray-900 placeholder-gray-400 leading-relaxed transition-all duration-200"
-              placeholder="Edit your tweet..."
-              rows={4}
-            />
-            {/* Character Count */}
-            <div className="absolute bottom-3 right-3 text-xs font-medium">
-              <span className={`
-                ${isOverLimit ? 'text-red-600' : isNearLimit ? 'text-orange-600' : 'text-gray-400'}
-              `}>
-                {characterCount}/280
-              </span>
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleSaveEdit}
-                disabled={isOverLimit}
-                className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
-              >
-                Save
-              </button>
-              <button
-                onClick={handleCancelEdit}
-                className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors font-medium"
-              >
-                Cancel
-              </button>
-            </div>
-            <span className="text-xs text-gray-500 font-medium">
-              ⌘ + Enter to save, Esc to cancel
-            </span>
-          </div>
+      {/* Tweet Content - Always Editable */}
+      <div className="space-y-4">
+        <textarea
+          ref={textareaRef}
+          value={editedContent}
+          onChange={(e) => setEditedContent(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={handleSaveEdit}
+          className="w-full p-3 border border-transparent rounded-lg focus:border-gray-300 focus:bg-white resize-none text-gray-900 placeholder-gray-400 leading-relaxed transition-all duration-200 bg-transparent hover:bg-gray-50/50 focus:outline-none"
+          placeholder="Edit your tweet..."
+          style={{ 
+            overflow: 'hidden',
+            minHeight: '60px'
+          }}
+        />
+        
+        {/* Character Count - Always visible and stationary */}
+        <div className="flex justify-end">
+          <span className={`text-xs font-medium ${
+            isOverLimit ? 'text-red-600' : isNearLimit ? 'text-orange-600' : 'text-gray-400'
+          }`}>
+            {characterCount}/280
+          </span>
         </div>
-      ) : (
-        <div
-          onClick={onStartEdit}
-          className="cursor-text p-3 rounded-lg hover:bg-gray-50 transition-all duration-200 border border-transparent hover:border-gray-100"
-        >
-          <p className="text-gray-900 leading-relaxed whitespace-pre-wrap text-base">
-            {cleanContent}
-          </p>
-          <div className="mt-2 text-xs text-gray-400">
-            {content.length} characters
-          </div>
-        </div>
-      )}
+      </div>
 
       {/* Annotations Display */}
       {annotations.length > 0 && (
         <div className="mt-4 space-y-2">
-          {annotations.map((annotation) => (
-            <div
-              key={annotation.id}
-              className="bg-gray-50 border border-gray-200 rounded-lg p-3"
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
-                  {annotation.type}
-                </span>
-                <span className="text-xs text-gray-400">
-                  {annotation.timestamp.toLocaleTimeString()}
-                </span>
+          {annotations.map((annotation) => {
+            const getAnnotationIcon = (type: Annotation['type']) => {
+              switch (type) {
+                case 'improvement': return '💡';
+                case 'tone': return '🎭';
+                case 'engagement': return '🚀';
+                case 'clarification': return '🔍';
+                case 'structure': return '🏗️';
+                case 'accuracy': return '✅';
+                case 'style': return '✨';
+                case 'general': return '💬';
+                default: return '💡';
+              }
+            };
+
+            const getAnnotationColor = (type: Annotation['type']) => {
+              switch (type) {
+                case 'improvement': return 'bg-blue-50 border-blue-200';
+                case 'tone': return 'bg-purple-50 border-purple-200';
+                case 'engagement': return 'bg-green-50 border-green-200';
+                case 'clarification': return 'bg-yellow-50 border-yellow-200';
+                case 'structure': return 'bg-indigo-50 border-indigo-200';
+                case 'accuracy': return 'bg-red-50 border-red-200';
+                case 'style': return 'bg-pink-50 border-pink-200';
+                case 'general': return 'bg-gray-50 border-gray-200';
+                default: return 'bg-gray-50 border-gray-200';
+              }
+            };
+
+            return (
+              <div
+                key={annotation.id}
+                className={`${getAnnotationColor(annotation.type)} rounded-lg p-3 border`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">{getAnnotationIcon(annotation.type)}</span>
+                    <span className="text-xs font-medium text-gray-700 capitalize">
+                      {annotation.type}
+                    </span>
+                  </div>
+                  <span className="text-xs text-gray-500">
+                    {annotation.timestamp.toLocaleTimeString()}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-800 leading-relaxed">
+                  {annotation.text}
+                </p>
               </div>
-              <p className="text-sm text-gray-800 leading-relaxed">
-                {annotation.text}
-              </p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

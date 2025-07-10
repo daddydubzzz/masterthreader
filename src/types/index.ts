@@ -17,7 +17,7 @@ export interface Edit {
 export interface Annotation {
   id: string;
   text: string;
-  type: 'improvement' | 'clarification' | 'style';
+  type: 'improvement' | 'clarification' | 'style' | 'tone' | 'engagement' | 'accuracy' | 'structure' | 'general';
   timestamp: Date;
 }
 

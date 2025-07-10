@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     // Validate input with comprehensive validation
     try {
       validateRequired(script, 'Script');
-      validateStringLength(script.trim(), 'Script', 10000); // Maximum 10k characters
+      validateStringLength(script.trim(), 'Script', 50000); // Maximum 50k characters
       validateRequired(megaPromptVersion, 'Mega prompt version');
     } catch (error) {
       if (error instanceof ValidationError) {
