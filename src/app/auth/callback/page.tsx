@@ -10,94 +10,99 @@ export default function AuthCallbackPage() {
   const router = useRouter()
 
   useEffect(() => {
-    const handleAuthCallback = async () => {
-      try {
-        if (!supabase) {
-          throw new Error('Supabase client not initialized')
-        }
+    if (!supabase) {
+      setStatus('error')
+      setMessage('Supabase client not initialized')
+      return
+    }
 
-        // Get the current URL to check for auth tokens
-        const url = new URL(window.location.href)
-        const code = url.searchParams.get('code')
-        const error = url.searchParams.get('error')
-        const errorDescription = url.searchParams.get('error_description')
+    console.log('🔍 Callback URL Debug:');
+    console.log('  Full URL:', window.location.href);
 
-        console.log('🔍 Callback URL Debug:');
-        console.log('  Full URL:', window.location.href);
-        console.log('  Code:', code);
-        console.log('  Error:', error);
-        console.log('  Error description:', errorDescription);
+    // Listen for auth state changes (supabase is guaranteed to be non-null here)
+    const { data: { subscription } } = supabase!.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔍 Auth State Change:', event, session?.user?.email);
 
-        if (error) {
-          throw new Error(errorDescription || error)
-        }
+      if (event === 'SIGNED_IN' && session?.user) {
+        try {
+          const user = session.user
 
-        let user = null
-
-        if (code) {
-          // Exchange code for session (PKCE flow)
-          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
-          
-          if (exchangeError) {
-            throw exchangeError
+          if (!user.email) {
+            throw new Error('No user email found')
           }
 
-          user = data.user
-        } else {
-          // Try to get existing session (fallback)
-          const { data: { user: existingUser } } = await supabase.auth.getUser()
-          user = existingUser
+          // Check if email is in allowed list
+          const allowedEmails = [
+            process.env.NEXT_PUBLIC_ALLOWED_EMAIL_1,
+            process.env.NEXT_PUBLIC_ALLOWED_EMAIL_2,
+          ].filter(Boolean) as string[]
+
+          // Debug logging
+          console.log('🔍 Auth Callback Debug:');
+          console.log('  User email:', user.email);
+          console.log('  Allowed emails:', allowedEmails);
+          console.log('  Email check:', allowedEmails.includes(user.email.toLowerCase()));
+
+          // If no allowed emails are configured, allow all authenticated users
+          if (allowedEmails.length === 0) {
+            console.warn('No allowed emails configured - allowing all authenticated users')
+          }
+
+          if (allowedEmails.length > 0 && !allowedEmails.includes(user.email.toLowerCase())) {
+            console.error('❌ Email not in allowed list');
+            if (supabase) {
+              await supabase.auth.signOut()
+            }
+            throw new Error('Email not authorized for this application')
+          }
+
+          console.log('✅ Email validation passed');
+
+          setStatus('success')
+          setMessage('Authentication successful! Redirecting...')
+          
+          // Redirect to home page after a short delay
+          setTimeout(() => {
+            router.push('/')
+          }, 2000)
+        } catch (error) {
+          console.error('Auth callback error:', error)
+          setStatus('error')
+          setMessage(error instanceof Error ? error.message : 'Authentication failed')
+          
+          // Redirect to login after error
+          setTimeout(() => {
+            router.push('/auth/login')
+          }, 3000)
         }
-
-        if (!user?.email) {
-          throw new Error('No user email found')
-        }
-
-        // Check if email is in allowed list
-        const allowedEmails = [
-          process.env.NEXT_PUBLIC_ALLOWED_EMAIL_1,
-          process.env.NEXT_PUBLIC_ALLOWED_EMAIL_2,
-        ].filter(Boolean) as string[]
-
-        // Debug logging
-        console.log('🔍 Auth Callback Debug:');
-        console.log('  User email:', user.email);
-        console.log('  Allowed emails:', allowedEmails);
-        console.log('  Email check:', allowedEmails.includes(user.email.toLowerCase()));
-
-        // If no allowed emails are configured, allow all authenticated users
-        if (allowedEmails.length === 0) {
-          console.warn('No allowed emails configured - allowing all authenticated users')
-        }
-
-        if (allowedEmails.length > 0 && !allowedEmails.includes(user.email.toLowerCase())) {
-          console.error('❌ Email not in allowed list');
-          await supabase.auth.signOut()
-          throw new Error('Email not authorized for this application')
-        }
-
-        console.log('✅ Email validation passed');
-
-        setStatus('success')
-        setMessage('Authentication successful! Redirecting...')
-        
-        // Redirect to home page after a short delay
-        setTimeout(() => {
-          router.push('/')
-        }, 2000)
-      } catch (error) {
-        console.error('Auth callback error:', error)
+      } else if (event === 'SIGNED_OUT') {
+        console.log('User signed out')
         setStatus('error')
-        setMessage(error instanceof Error ? error.message : 'Authentication failed')
-        
-        // Redirect to login after error
+        setMessage('Authentication failed')
         setTimeout(() => {
           router.push('/auth/login')
         }, 3000)
       }
+    })
+
+    // Check for immediate auth errors in URL
+    const url = new URL(window.location.href)
+    const error = url.searchParams.get('error')
+    const errorDescription = url.searchParams.get('error_description')
+
+    if (error) {
+      console.error('Auth URL error:', error, errorDescription)
+      setStatus('error')
+      setMessage(errorDescription || error)
+      setTimeout(() => {
+        router.push('/auth/login')
+      }, 3000)
     }
 
-    handleAuthCallback()
+    // Cleanup subscription
+    return () => {
+      subscription.unsubscribe()
+    }
   }, [router])
 
   return (

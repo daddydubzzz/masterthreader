@@ -35,10 +35,13 @@ export const signInWithMagicLink = async (email: string) => {
     throw new Error('Email not authorized for this application')
   }
 
+  // Use signInWithOtp with PKCE flow
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
       emailRedirectTo: `${window.location.origin}/auth/callback`,
+      // This ensures PKCE is used
+      shouldCreateUser: false,
     },
   })
 
