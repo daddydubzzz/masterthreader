@@ -6,7 +6,7 @@ import { Tweet } from './Tweet';
 import { Edit, Annotation } from '@/types';
 
 export function ThreadCard({ thread, threadIndex, onThreadUpdated }: ThreadCardProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [editingTweetIndex, setEditingTweetIndex] = useState<number | null>(null);
 
   // Parse thread content into individual tweets, handling em-dash separators

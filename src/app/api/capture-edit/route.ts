@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { captureVectorTriple } from '@/lib/vectorDB';
 import { VectorTriple } from '@/types';
-import { ValidationError, validateRequired, validateStringLength, validatePositiveNumber, ErrorLogger } from '@/lib/errorHandling';
+import { ValidationError, validateRequired, validateStringLength, ErrorLogger } from '@/lib/errorHandling';
 
 export async function POST(request: NextRequest) {
   try {

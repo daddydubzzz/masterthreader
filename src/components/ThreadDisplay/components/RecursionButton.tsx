@@ -24,12 +24,12 @@ export function RecursionButton({ visible, onClick, isLoading = false }: Recursi
       {/* Action Prompt */}
       <div className="text-center space-y-2">
         <h3 className="text-xl font-bold gradient-text">
-          {showLoading ? 'AI Learning in Progress' : 'Ready for AI Learning'}
+          {showLoading ? 'Improving Your Threads' : 'Ready to Improve'}
         </h3>
         <p className="text-gray-600 max-w-md mx-auto leading-relaxed text-sm">
           {showLoading 
-            ? 'Analyzing your edits and feedback to improve future thread generation...'
-            : 'Your edits and feedback will train the AI to better match your writing style and preferences.'
+            ? 'AI is analyzing your edits to create better versions of these threads...'
+            : 'Get improved versions of your current threads based on the edits you\'ve made.'
           }
         </p>
       </div>
@@ -71,7 +71,7 @@ export function RecursionButton({ visible, onClick, isLoading = false }: Recursi
                   </svg>
                   <div className="absolute -inset-1 rounded-full bg-white opacity-20 blur-sm group-hover:opacity-40 transition-opacity duration-300"></div>
                 </div>
-                <span className="font-medium">Run Recursion</span>
+                <span className="font-medium">Improve Current Threads</span>
                 <div className="flex gap-1">
                   <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
                   <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.1s' }}></div>
@@ -92,8 +92,8 @@ export function RecursionButton({ visible, onClick, isLoading = false }: Recursi
       <div className="text-center max-w-lg mx-auto">
         <p className="text-xs text-gray-500 leading-relaxed">
           {showLoading 
-            ? 'The AI is processing your feedback patterns and will return improved thread versions.'
-            : 'The AI will analyze your modifications and create improved thread variations with enhanced quality and personalization.'
+            ? 'Processing your edits to generate better versions of these specific threads.'
+            : 'Creates new versions of your current threads that incorporate your feedback.'
           }
         </p>
       </div>

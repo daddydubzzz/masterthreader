@@ -5,8 +5,9 @@ import { MiddlePanelProps } from './types';
 import { ScriptInput } from '@/components/LandingInterface/components/ScriptInput';
 import { GenerateButton } from '@/components/LandingInterface/components/GenerateButton';
 import { ThreadDisplay } from '@/components/ThreadDisplay';
-import { useLandingInterface } from '@/components/LandingInterface/hooks/useLandingInterface';
+import { useMiddlePanel } from './hooks/useMiddlePanel';
 import { hasPersistedThreads } from '@/lib/threadPersistence';
+import { showNotification } from '@/utils/notifications';
 
 export function MiddlePanel({ threads, originalScript, onThreadsGenerated }: MiddlePanelProps) {
   const [showRestoredMessage, setShowRestoredMessage] = useState(false);
@@ -17,7 +18,7 @@ export function MiddlePanel({ threads, originalScript, onThreadsGenerated }: Mid
     isGenerating,
     error,
     generateThreads
-  } = useLandingInterface();
+  } = useMiddlePanel(undefined, onThreadsGenerated);
 
   // Check if threads were restored from storage
   useEffect(() => {
@@ -32,9 +33,23 @@ export function MiddlePanel({ threads, originalScript, onThreadsGenerated }: Mid
   }, [threads]);
 
   const handleGenerate = async () => {
-    const result = await generateThreads();
-    if (result) {
-      onThreadsGenerated(result.threads, result.megaPrompt, script);
+    await generateThreads();
+    // Result handling is already done in the hook via callback
+  };
+
+  const handleRegenerateThreads = async () => {
+    if (!originalScript) return;
+    
+    // Temporarily set script to original script for regeneration
+    const currentScript = script;
+    setScript(originalScript);
+    
+    try {
+      await generateThreads();
+      // Result handling is already done in the hook via callback
+    } finally {
+      // Restore original script state
+      setScript(currentScript);
     }
   };
 
@@ -66,20 +81,7 @@ export function MiddlePanel({ threads, originalScript, onThreadsGenerated }: Mid
         </div>
       )}
 
-      {/* Show "New Generation" button when threads exist */}
-      {hasGeneratedThreads && (
-        <div className="flex justify-center p-4 border-b border-gray-200">
-          <button
-            onClick={() => {
-              // Clear existing threads to show input form
-              onThreadsGenerated([], { version: '', content: '', rules: [], createdAt: new Date() }, '');
-            }}
-            className="text-xs text-emerald-600 hover:text-emerald-700 font-medium bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-full border border-emerald-200 transition-colors"
-          >
-            + New Generation
-          </button>
-        </div>
-      )}
+
 
       {/* Content */}
       <div className="flex-1">
@@ -91,6 +93,7 @@ export function MiddlePanel({ threads, originalScript, onThreadsGenerated }: Mid
               // Update threads with edits/annotations
               onThreadsGenerated(updatedThreads, { version: '', content: '', rules: [], createdAt: new Date() }, originalScript || '');
             }}
+            onRegenerateThreads={handleRegenerateThreads}
             onRecursionRequested={async () => {
               // Handle recursion request
               console.log('Recursion requested with threads:', threads);
@@ -125,7 +128,8 @@ export function MiddlePanel({ threads, originalScript, onThreadsGenerated }: Mid
                 });
 
                 if (!response.ok) {
-                  throw new Error(`Recursion failed: ${response.statusText}`);
+                  const errorData = await response.json();
+                  throw new Error(errorData.error || `Recursion failed: ${response.statusText}`);
                 }
 
                 const recursionResult = await response.json();
@@ -142,7 +146,13 @@ export function MiddlePanel({ threads, originalScript, onThreadsGenerated }: Mid
                 console.log('Recursion completed successfully:', recursionResult);
               } catch (error) {
                 console.error('Recursion error:', error);
-                // Could show user-friendly error message here
+                
+                // Show user-friendly error message
+                showNotification(
+                  error instanceof Error ? error.message : 'Recursion failed. Please try again.',
+                  'error',
+                  5000
+                );
               }
             }}
             scriptTitle={originalScript ? originalScript.slice(0, 50) + '...' : undefined}

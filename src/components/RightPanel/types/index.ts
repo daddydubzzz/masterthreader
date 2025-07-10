@@ -1,4 +1,5 @@
 import { Thread, MegaPrompt } from '@/types';
+import { MegaPromptSuggestion as VersioningSuggestion, MegaPromptVersion } from '@/lib/megaPromptVersioning';
 
 // Main RightPanel props
 export interface RightPanelProps {
@@ -77,13 +78,19 @@ export interface UseRightPanelReturn {
   editCaptures: EditCapture[];
   learningPatterns: LearningPattern[];
   suggestions: MegaPromptSuggestion[];
+  megaPromptSuggestions: VersioningSuggestion[];
+  versionHistory: MegaPromptVersion[];
   currentSession: TrainingSession | null;
   isProcessing: boolean;
   captureEdit: (edit: Omit<EditCapture, 'id' | 'timestamp'>) => void;
   processThreadAnnotations: (threads: Thread[]) => Promise<void>;
   generateSuggestions: () => Promise<void>;
+  generateMegaPromptSuggestions: () => Promise<void>;
+  acceptMegaPromptSuggestion: (suggestionId: string, description?: string) => Promise<void>;
+  rejectMegaPromptSuggestion: (suggestionId: string) => Promise<void>;
+  rollbackToVersion: (versionId: string) => Promise<void>;
   applyPattern: (patternId: string) => void;
-  acceptSuggestion: (suggestionId: string) => void;
+  acceptSuggestion: (suggestionId: string) => Promise<void>;
   rejectSuggestion: (suggestionId: string) => void;
   startTrainingSession: () => void;
   endTrainingSession: () => void;

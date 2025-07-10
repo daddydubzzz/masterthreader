@@ -4,6 +4,7 @@ export interface ThreadDisplayProps {
   threads: Thread[];
   onThreadsUpdated: (threads: Thread[]) => void;
   onRecursionRequested: () => Promise<void>;
+  onRegenerateThreads?: () => Promise<void>;
   scriptTitle?: string; // For vector DB context and organization
 }
 

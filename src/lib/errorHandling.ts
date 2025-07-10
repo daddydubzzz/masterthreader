@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 import React from 'react';
 
 export enum ErrorSeverity {
@@ -81,62 +83,150 @@ export class ConfigurationError extends ApplicationError {
   }
 }
 
-/**
- * Standardized error logger with consistent formatting
- */
-export class ErrorLogger {
-  private static formatError(error: Error, context?: Record<string, any>): string {
-    const timestamp = new Date().toISOString();
-    const contextStr = context ? ` Context: ${JSON.stringify(context)}` : '';
-    
-    if (error instanceof ApplicationError) {
-      return `[${timestamp}] [${error.severity.toUpperCase()}] ${error.code}: ${error.message}${contextStr}`;
-    }
-    
-    return `[${timestamp}] [ERROR] ${error.name}: ${error.message}${contextStr}`;
+export class VectorDBError extends ApplicationError {
+  constructor(message: string, operation?: string, originalError?: Error) {
+    super({
+      message,
+      code: 'VECTOR_DB_ERROR',
+      severity: ErrorSeverity.ERROR,
+      context: { operation },
+      cause: originalError
+    });
+    this.name = 'VectorDBError';
   }
+}
 
+// Error logging utility
+export class ErrorLogger {
   static logError(error: Error, context?: Record<string, any>): void {
-    const formatted = this.formatError(error, context);
-    
-    if (error instanceof ApplicationError) {
-      switch (error.severity) {
-        case ErrorSeverity.INFO:
-          console.info(formatted);
-          break;
-        case ErrorSeverity.WARN:
-          console.warn(formatted);
-          break;
-        case ErrorSeverity.ERROR:
-          console.error(formatted);
-          break;
-        case ErrorSeverity.FATAL:
-          console.error(formatted);
-          break;
-      }
-    } else {
-      console.error(formatted);
+    const errorInfo = {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString(),
+      context: context || {}
+    };
+
+    // Log to console in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error logged:', errorInfo);
     }
+
+    // In production, you might want to:
+    // - Send to error tracking service (Sentry, LogRocket, etc.)
+    // - Store in database for analysis
+    // - Send alerts for critical errors
+    // - Generate error reports
+
+    // Example: Send to external service
+    // await sendToErrorTrackingService(errorInfo);
   }
 
   static logWarning(message: string, context?: Record<string, any>): void {
-    const warning = new ApplicationError({
+    const warningInfo = {
+      level: 'warning',
       message,
-      code: 'WARNING',
-      severity: ErrorSeverity.WARN,
-      context
-    });
-    this.logError(warning, context);
+      timestamp: new Date().toISOString(),
+      context: context || {}
+    };
+
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Warning logged:', warningInfo);
+    }
   }
 
   static logInfo(message: string, context?: Record<string, any>): void {
-    const info = new ApplicationError({
+    const infoLog = {
+      level: 'info',
       message,
-      code: 'INFO',
-      severity: ErrorSeverity.INFO,
-      context
-    });
-    this.logError(info, context);
+      timestamp: new Date().toISOString(),
+      context: context || {}
+    };
+
+    if (process.env.NODE_ENV === 'development') {
+      console.info('Info logged:', infoLog);
+    }
+  }
+}
+
+// Error handling middleware for API routes
+export function handleApiError(error: Error, operation: string): Response {
+  ErrorLogger.logError(error, { operation });
+
+  if (error instanceof ValidationError) {
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  if (error instanceof DatabaseError) {
+    return new Response(
+      JSON.stringify({ error: 'Database operation failed' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  if (error instanceof LLMError) {
+    return new Response(
+      JSON.stringify({ error: 'AI service unavailable' }),
+      { status: 503, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  if (error instanceof VectorDBError) {
+    return new Response(
+      JSON.stringify({ error: 'Vector database operation failed' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // Generic error
+  return new Response(
+    JSON.stringify({ error: 'Internal server error' }),
+    { status: 500, headers: { 'Content-Type': 'application/json' } }
+  );
+}
+
+// Retry utility for transient errors
+export async function retryOperation<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  delay: number = 1000
+): Promise<T> {
+  let lastError: Error;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      
+      if (attempt === maxRetries) {
+        throw lastError;
+      }
+
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, delay * attempt));
+    }
+  }
+
+  throw lastError!;
+}
+
+// Safe async wrapper
+export async function safeAsync<T>(
+  operation: () => Promise<T>,
+  fallback?: T
+): Promise<T | undefined> {
+  try {
+    return await operation();
+  } catch (error) {
+    ErrorLogger.logError(
+      error instanceof Error ? error : new Error(String(error)),
+      { operation: 'safeAsync' }
+    );
+    return fallback;
   }
 }
 

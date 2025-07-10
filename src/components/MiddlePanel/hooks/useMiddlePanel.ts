@@ -17,7 +17,7 @@ export function useMiddlePanel(
   const generateThreads = useCallback(async () => {
     if (!script.trim()) {
       setError('Please enter a script to transform');
-      return;
+      return null;
     }
 
     setIsGenerating(true);
@@ -62,6 +62,11 @@ export function useMiddlePanel(
       // Call the callback with the generated threads
       onThreadsGenerated?.(data.threads, data.megaPromptUsed, script);
 
+      return {
+        threads: data.threads,
+        megaPrompt: data.megaPromptUsed
+      };
+
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
       setError(errorMessage);
@@ -77,6 +82,7 @@ export function useMiddlePanel(
       };
       
       setGenerationHistory(prev => [historyItem, ...prev.slice(0, 9)]);
+      return null;
     } finally {
       setIsGenerating(false);
     }

@@ -3,7 +3,7 @@ import { createLLMClient } from '@/lib/llm';
 import { getContextualExamples, findSimilarTriples, captureVectorTriple } from '@/lib/vectorDB';
 import { RecursionPayload } from '@/types';
 import { findEditAnnotationPairs, createVectorTripleFromPair } from '@/lib/temporalPairing';
-import { ValidationError, ErrorLogger, AsyncHandler } from '@/lib/errorHandling';
+import { ValidationError, ErrorLogger } from '@/lib/errorHandling';
 
 export async function POST(request: NextRequest) {
   try {
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     let recurringIssues: Array<{
       original_tweet: string;
       frequency: number;
-      best_example: any;
+      best_example: unknown;
       common_annotations: string[];
     }> = [];
 

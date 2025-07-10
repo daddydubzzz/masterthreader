@@ -31,7 +31,7 @@ export interface UseMiddlePanelReturn {
   isGenerating: boolean;
   error: string | null;
   generationHistory: GenerationHistoryItem[];
-  generateThreads: () => Promise<void>;
+  generateThreads: () => Promise<{ threads: Thread[]; megaPrompt: MegaPrompt; } | null>;
   clearError: () => void;
   clearScript: () => void;
 } 

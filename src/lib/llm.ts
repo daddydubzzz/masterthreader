@@ -484,7 +484,7 @@ Requirements:
       }
 
       // Convert to Thread format
-      const updatedThreads = parsedResponse.updatedThreads.map((thread: any) => ({
+      const updatedThreads = parsedResponse.updatedThreads.map((thread: { id: string; content: string }) => ({
         id: thread.id,
         content: thread.content,
         edits: [],

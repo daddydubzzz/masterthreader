@@ -2,6 +2,12 @@ import { useState, useCallback, useEffect } from 'react';
 import { Thread } from '@/types';
 import { UseRightPanelReturn, EditCapture, LearningPattern, MegaPromptSuggestion, TrainingSession } from '../types';
 import { findEditAnnotationPairs, createVectorTripleFromPair } from '@/lib/temporalPairing';
+import { showNotification } from '@/utils/notifications';
+import { 
+  MegaPromptSuggestion as VersioningSuggestion, 
+  MegaPromptVersion,
+  initializeMegaPromptVersioning 
+} from '@/lib/megaPromptVersioning';
 
 export function useRightPanel(
   threads?: Thread[],
@@ -11,6 +17,8 @@ export function useRightPanel(
   const [editCaptures, setEditCaptures] = useState<EditCapture[]>([]);
   const [learningPatterns, setLearningPatterns] = useState<LearningPattern[]>([]);
   const [suggestions, setSuggestions] = useState<MegaPromptSuggestion[]>([]);
+  const [megaPromptSuggestions, setMegaPromptSuggestions] = useState<VersioningSuggestion[]>([]);
+  const [versionHistory, setVersionHistory] = useState<MegaPromptVersion[]>([]);
   const [currentSession, setCurrentSession] = useState<TrainingSession | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -115,9 +123,14 @@ export function useRightPanel(
 
           setLearningPatterns(patterns);
         }
+      } else {
+        console.warn('Failed to analyze patterns:', response.status);
       }
     } catch (error) {
       console.error('Error analyzing patterns:', error);
+      
+      // Show user-friendly error message
+      showNotification('Failed to analyze patterns. Please try again.', 'error', 5000);
     } finally {
       setIsProcessing(false);
     }
@@ -232,10 +245,25 @@ export function useRightPanel(
     // Implementation for applying a learned pattern
   }, []);
 
-  const acceptSuggestion = useCallback((suggestionId: string) => {
-    setSuggestions(prev => prev.filter(s => s.id !== suggestionId));
-    console.log('Accepted suggestion:', suggestionId);
-  }, []);
+  const acceptSuggestion = useCallback(async (suggestionId: string) => {
+    const suggestion = suggestions.find(s => s.id === suggestionId);
+    if (!suggestion) return;
+
+    try {
+      // Here we would typically save the accepted suggestion to the megaprompt
+      // For now, we'll just log it and remove from suggestions
+      console.log('Accepted suggestion:', suggestion);
+      
+      // TODO: Integrate with megaprompt update system
+      // await updateMegaPrompt(suggestion);
+      
+      setSuggestions(prev => prev.filter(s => s.id !== suggestionId));
+      showNotification('Suggestion accepted successfully!', 'success');
+    } catch (error) {
+      console.error('Error accepting suggestion:', error);
+      showNotification('Failed to accept suggestion. Please try again.', 'error');
+    }
+  }, [suggestions]);
 
   const rejectSuggestion = useCallback((suggestionId: string) => {
     setSuggestions(prev => prev.filter(s => s.id !== suggestionId));
@@ -258,6 +286,8 @@ export function useRightPanel(
       processThreadAnnotations(threads);
       generateSuggestions();
     }
+    
+    showNotification('Training session started!', 'info');
   }, [originalScript, editCaptures.length, learningPatterns.length, suggestions.length, threads, processThreadAnnotations, generateSuggestions]);
 
   const endTrainingSession = useCallback(() => {
@@ -271,8 +301,163 @@ export function useRightPanel(
       };
       setCurrentSession(null);
       console.log('Training session ended:', updatedSession);
+      showNotification(
+        `Training session completed! Processed ${updatedSession.editsCount} edits, identified ${updatedSession.patternsIdentified} patterns.`,
+        'success'
+      );
     }
   }, [currentSession, editCaptures.length, learningPatterns.length, suggestions.length]);
+
+  // Initialize megaprompt versioning system
+  useEffect(() => {
+    initializeMegaPromptVersioning();
+  }, []);
+
+  // Load megaprompt suggestions and version history
+  const loadMegaPromptData = useCallback(async () => {
+    try {
+      // Load pending suggestions
+      const suggestionsResponse = await fetch('/api/megaprompt-suggestions');
+      if (suggestionsResponse.ok) {
+        const data = await suggestionsResponse.json();
+        setMegaPromptSuggestions(data.suggestions || []);
+      }
+
+      // Load version history
+      const versionsResponse = await fetch('/api/megaprompt-suggestions?action=versions');
+      if (versionsResponse.ok) {
+        const data = await versionsResponse.json();
+        setVersionHistory(data.versions || []);
+      }
+    } catch (error) {
+      console.error('Error loading megaprompt data:', error);
+    }
+  }, []);
+
+  // Generate new megaprompt suggestions
+  const generateMegaPromptSuggestions = useCallback(async () => {
+    setIsProcessing(true);
+    try {
+      const response = await fetch('/api/megaprompt-suggestions?action=generate', {
+        method: 'GET',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setMegaPromptSuggestions(data.suggestions || []);
+        showNotification(
+          `Generated ${data.generated} new megaprompt suggestions based on ${data.basedOnPatterns} patterns!`,
+          'success'
+        );
+      } else {
+        throw new Error('Failed to generate suggestions');
+      }
+    } catch (error) {
+      console.error('Error generating megaprompt suggestions:', error);
+      showNotification('Failed to generate megaprompt suggestions. Please try again.', 'error');
+    } finally {
+      setIsProcessing(false);
+    }
+  }, []);
+
+  // Accept megaprompt suggestion
+  const acceptMegaPromptSuggestion = useCallback(async (suggestionId: string, description?: string) => {
+    setIsProcessing(true);
+    try {
+      const response = await fetch('/api/megaprompt-suggestions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'accept',
+          suggestionId,
+          description
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Remove accepted suggestion from list
+        setMegaPromptSuggestions(prev => prev.filter(s => s.id !== suggestionId));
+        
+        // Add new version to history
+        setVersionHistory(prev => [...prev, data.version]);
+        
+        showNotification('Megaprompt suggestion accepted and applied!', 'success');
+      } else {
+        throw new Error('Failed to accept suggestion');
+      }
+    } catch (error) {
+      console.error('Error accepting megaprompt suggestion:', error);
+      showNotification('Failed to accept suggestion. Please try again.', 'error');
+    } finally {
+      setIsProcessing(false);
+    }
+  }, []);
+
+  // Reject megaprompt suggestion
+  const rejectMegaPromptSuggestion = useCallback(async (suggestionId: string) => {
+    try {
+      const response = await fetch('/api/megaprompt-suggestions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'reject',
+          suggestionId
+        }),
+      });
+
+      if (response.ok) {
+        // Remove rejected suggestion from list
+        setMegaPromptSuggestions(prev => prev.filter(s => s.id !== suggestionId));
+        showNotification('Suggestion rejected', 'info');
+      } else {
+        throw new Error('Failed to reject suggestion');
+      }
+    } catch (error) {
+      console.error('Error rejecting megaprompt suggestion:', error);
+      showNotification('Failed to reject suggestion. Please try again.', 'error');
+    }
+  }, []);
+
+  // Rollback to previous version
+  const rollbackToVersion = useCallback(async (versionId: string) => {
+    setIsProcessing(true);
+    try {
+      const response = await fetch('/api/megaprompt-suggestions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'rollback',
+          versionId
+        }),
+      });
+
+      if (response.ok) {
+        // Reload version history to reflect rollback
+        await loadMegaPromptData();
+        showNotification('Successfully rolled back to selected version!', 'success');
+      } else {
+        throw new Error('Failed to rollback');
+      }
+    } catch (error) {
+      console.error('Error rolling back version:', error);
+      showNotification('Failed to rollback. Please try again.', 'error');
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [loadMegaPromptData]);
+
+  // Load megaprompt data on component mount
+  useEffect(() => {
+    loadMegaPromptData();
+  }, [loadMegaPromptData]);
 
   // Auto-analyze patterns when threads change
   useEffect(() => {
@@ -285,11 +470,17 @@ export function useRightPanel(
     editCaptures,
     learningPatterns,
     suggestions,
+    megaPromptSuggestions,
+    versionHistory,
     currentSession,
     isProcessing,
     captureEdit,
     processThreadAnnotations,
     generateSuggestions,
+    generateMegaPromptSuggestions,
+    acceptMegaPromptSuggestion,
+    rejectMegaPromptSuggestion,
+    rollbackToVersion,
     applyPattern,
     acceptSuggestion,
     rejectSuggestion,
