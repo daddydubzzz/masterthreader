@@ -14,10 +14,10 @@ export const createServerClient = () => {
   return createClient(supabaseUrl, supabaseAnonKey)
 }
 
-// Allowed email addresses for authentication
+// Allowed email addresses for authentication (client-side)
 export const ALLOWED_EMAILS = [
-  process.env.ALLOWED_EMAIL_1,
-  process.env.ALLOWED_EMAIL_2,
+  process.env.NEXT_PUBLIC_ALLOWED_EMAIL_1,
+  process.env.NEXT_PUBLIC_ALLOWED_EMAIL_2,
 ].filter(Boolean) as string[]
 
 // Check if email is allowed
