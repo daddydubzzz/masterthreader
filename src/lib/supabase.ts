@@ -40,8 +40,8 @@ export const signInWithMagicLink = async (email: string) => {
     email,
     options: {
       emailRedirectTo: `${window.location.origin}/auth/callback`,
-      // This ensures PKCE is used
-      shouldCreateUser: false,
+      // Allow user creation for allowed emails
+      shouldCreateUser: true,
     },
   })
 
