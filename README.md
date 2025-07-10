@@ -12,6 +12,7 @@ Transform your scripts into high-quality Twitter threads with intelligent AI gen
 - **Vector Database**: Stores and retrieves contextual examples for better AI generation
 - **MegaPrompt Evolution**: Automatically suggests improvements to generation prompts
 - **Export Functionality**: Download threads in various formats for easy posting
+- **Secure Authentication**: Magic link authentication with email-based access control
 
 ## 🏗️ Architecture
 
@@ -27,6 +28,7 @@ MasterThreader is built with:
 - Node.js 18+
 - PostgreSQL with pgvector extension
 - OpenAI or Anthropic API key
+- Supabase account for authentication
 
 ### Setup
 
@@ -51,15 +53,32 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 psql -d your_database -f database/schema.sql
 ```
 
-4. **Configure environment variables**
+4. **Configure Supabase authentication**
 ```bash
-# Create .env.local file
+# Use your existing Supabase project (same one storing vector embeddings)
+# Go to Authentication > Settings in your Supabase dashboard
+# Enable Email authentication and configure redirect URLs
+```
+
+5. **Configure environment variables**
+```bash
+# Add to your existing .env.local file
 DATABASE_URL=postgresql://user:password@localhost:5432/masterthreader
 OPENAI_API_KEY=sk-...
 LLM_PROVIDER=openai  # or anthropic
+
+# Supabase Configuration (use existing values from vector DB setup)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-existing-anon-key
+
+# Authentication - Add these new variables
+ALLOWED_EMAIL_1=your-email@example.com
+ALLOWED_EMAIL_2=josh-email@example.com
+NEXT_PUBLIC_ALLOWED_EMAIL_1=your-email@example.com
+NEXT_PUBLIC_ALLOWED_EMAIL_2=josh-email@example.com
 ```
 
-5. **Start the development server**
+6. **Start the development server**
 ```bash
 npm run dev
 ```
@@ -125,6 +144,14 @@ DATABASE_URL=postgresql://...          # PostgreSQL connection string
 OPENAI_API_KEY=sk-...                 # OpenAI API key
 ANTHROPIC_API_KEY=sk-ant-...          # Anthropic API key (optional)
 LLM_PROVIDER=openai                   # Primary LLM provider
+
+# Supabase Authentication
+NEXT_PUBLIC_SUPABASE_URL=https://...   # Supabase project URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...      # Supabase anonymous key
+
+# Access Control
+ALLOWED_EMAIL_1=user1@example.com     # First allowed email
+ALLOWED_EMAIL_2=user2@example.com     # Second allowed email
 ```
 
 ### Database Configuration

@@ -10,10 +10,12 @@
     "test:api": "./scripts/test-apis.sh",
     "test:db": "node scripts/inspect-db.js",
     "test:learning": "node scripts/test-learning-loop.js",
+    "test:auth": "node scripts/test-auth-setup.js",
     "test:all": "npm run test:api && npm run test:learning"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.56.0",
+    "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.50.4",
     "@types/pg": "^8.15.4",
     "axios": "^1.10.0",
