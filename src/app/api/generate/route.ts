@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Load Josh's actual mega prompt content from file
+    // Load actual mega prompt content from file
     const actualMegaPromptContent = loadMegaPromptFromFile();
     
     // Get contextual examples from RAG system for better first-pass quality
@@ -60,15 +60,15 @@ export async function POST(request: NextRequest) {
     const ragEnhancedContent = contextualExamples.length > 0 
       ? `${actualMegaPromptContent}
 
-CONTEXTUAL EXAMPLES FROM JOSH'S PAST EDITS:
+CONTEXTUAL EXAMPLES FROM PAST EDITS:
 ${contextualExamples.map((ex, i) => `
 Example ${i + 1}:
 Original: "${ex.original}"
-Josh's feedback: "${ex.annotation}"
+User feedback: "${ex.annotation}"
 Final version: "${ex.improved}"
 `).join('')}
 
-Use these examples to understand Josh's preferences and create better first-pass threads that match his style and requirements.`
+Use these examples to understand user preferences and create better first-pass threads that match their style and requirements.`
       : actualMegaPromptContent;
 
     const megaPromptWithActualContent = {

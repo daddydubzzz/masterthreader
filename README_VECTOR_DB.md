@@ -2,7 +2,7 @@
 
 ## Overview
 
-MasterThreader implements a **Retrieval-Augmented Generation (RAG)** system using vector embeddings to learn from Josh's editing patterns and improve AI thread generation quality over time.
+MasterThreader implements a **Retrieval-Augmented Generation (RAG)** system using vector embeddings to learn from user editing patterns and improve AI thread generation quality over time.
 
 ## 🎯 RAG Strategy
 
@@ -39,8 +39,8 @@ CREATE TABLE vector_triples (
     id UUID PRIMARY KEY,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     original_tweet TEXT NOT NULL,        -- AI's original output
-    annotation TEXT NOT NULL,            -- Josh's feedback/reasoning
-    final_edit TEXT NOT NULL,            -- Josh's improved version
+    annotation TEXT NOT NULL,            -- User feedback/reasoning
+    final_edit TEXT NOT NULL,            -- User's improved version
     script_title TEXT,                   -- Context grouping
     position_in_thread INTEGER,          -- Position context
     embedding_vector vector(1536),       -- OpenAI embedding of full triple
@@ -50,7 +50,7 @@ CREATE TABLE vector_triples (
 ```
 
 **Key Views:**
-- `recurring_patterns` - Patterns Josh fixes repeatedly
+- `recurring_patterns` - Patterns users fix repeatedly
 - `best_examples` - High-quality examples (rating ≥ 4)
 
 ### Core RAG Functions
@@ -87,7 +87,7 @@ User Script Input → getContextualExamples() → Enhanced Mega Prompt → Bette
 
 ### 2. **Edit Capture** (Vector Triple Creation)
 ```
-Josh Edits Tweet → Josh Adds Annotation → captureVectorTriple() → RAG Database
+User Edits Tweet → User Adds Annotation → captureVectorTriple() → RAG Database
 ```
 
 ### 3. **Recursion** (Pattern-Aware Improvements)
@@ -138,8 +138,8 @@ The schema includes sample vector triples for immediate testing.
 POST /api/capture-edit
 {
   "original_tweet": "AI generated tweet",
-  "annotation": "Josh's feedback", 
-  "final_edit": "Josh's improved version",
+  "annotation": "User feedback", 
+  "final_edit": "User's improved version",
   "script_title": "Context",
   "quality_rating": 4
 }
@@ -208,7 +208,7 @@ SELECT COUNT(*), AVG(quality_rating) FROM vector_triples;
 - Automatic index maintenance
 
 ### Data Privacy
-- No user data stored, only Josh's editing patterns
+- No personal data stored, only editing patterns
 - Environment variable protection for API keys
 - Database connection pooling for performance
 
@@ -262,4 +262,4 @@ GET /api/analyze-patterns
 
 ---
 
-**The RAG system continuously learns from Josh's editing patterns, making MasterThreader smarter with every script processed.** 🚀 
+**The RAG system continuously learns from user editing patterns, making MasterThreader smarter with every script processed.** 🚀 

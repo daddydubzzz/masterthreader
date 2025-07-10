@@ -32,7 +32,7 @@ class OpenAIClient implements LLMClient {
     const OpenAI = (await import('openai')).default;
     const openai = new OpenAI({ apiKey: this.config.apiKey });
 
-    // Combine Josh's mega prompt with the script exactly as he does
+    // Combine mega prompt with the script for thread generation
     const combinedPrompt = `${megaPrompt.content}
 
 ${script}`;
@@ -222,7 +222,7 @@ Respond with valid JSON:
   }
 }
 
-// Anthropic Implementation (for Josh's production use with Opus 4)
+// Anthropic Implementation (for production use with Claude)
 class AnthropicClient implements LLMClient {
   private config: LLMConfig;
 

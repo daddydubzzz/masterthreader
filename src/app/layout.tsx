@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "MasterThreader | AI Copy Refinement Engine",
-  description: "Transform your scripts into viral Twitter threads with Josh's AI-powered thread generation and refinement system.",
+  description: "Transform your scripts into viral Twitter threads with AI-powered thread generation and refinement system.",
   keywords: ["twitter threads", "ai copywriting", "content creation", "social media", "thread generator"],
   authors: [{ name: "MasterThreader Team" }],
   robots: "index, follow",

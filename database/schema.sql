@@ -1,5 +1,5 @@
 -- MasterThreader Vector Database Schema
--- This schema stores Josh's editing patterns for AI learning
+-- This schema stores user editing patterns for AI learning
 
 -- Enable pgvector extension
 CREATE EXTENSION IF NOT EXISTS vector;

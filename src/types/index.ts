@@ -21,7 +21,7 @@ export interface Annotation {
   timestamp: Date;
 }
 
-// Structured thread format matching Josh's expected output
+// Structured thread format for Twitter thread output
 export interface StructuredThread {
   title: string;
   tweets: StructuredTweet[];
@@ -33,7 +33,7 @@ export interface StructuredTweet {
   characterCount: number;
 }
 
-// LLM Response format that matches Josh's requirements
+// LLM Response format for thread generation
 export interface LLMThreadResponse {
   threads: StructuredThread[];
   conceptBlocks: ConceptBlock[];
@@ -50,8 +50,8 @@ export interface VectorTriple {
   id?: string;
   created_at?: Date;
   original_tweet: string;      // The original AI-generated tweet
-  annotation: string;          // Josh's feedback/reasoning
-  final_edit: string;          // Josh's final version
+  annotation: string;          // User feedback/reasoning
+  final_edit: string;          // User's final version
   script_title?: string;       // Context for grouping
   position_in_thread?: number; // Position context
   embedding_vector?: number[]; // Full triple embedded together
@@ -95,7 +95,7 @@ export interface PromptRule {
   content: string;
   category: string;
   accepted: boolean;
-  source?: 'user' | 'ai-suggestion' | 'josh';
+  source?: 'user' | 'ai-suggestion';
 }
 
 export interface RecursionPayload {
