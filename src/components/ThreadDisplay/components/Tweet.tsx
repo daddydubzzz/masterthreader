@@ -11,7 +11,6 @@ export function Tweet({
   onTweetEdited,
   onAnnotationAdded,
   annotations,
-  isEditing,
   onStartEdit,
   onEndEdit
 }: TweetProps) {
@@ -109,7 +108,6 @@ export function Tweet({
 
   // Extract tweet number if present
   const tweetNumber = content.match(/^(\d+)\/\d+\s/) ? content.match(/^(\d+)\/\d+\s/)?.[1] : tweetIndex + 1;
-  const cleanContent = content.replace(/^\d+\/\d+\s/, '');
 
   return (
     <div className="group relative border border-gray-100 rounded-xl p-4 hover:border-gray-200 hover:bg-gray-50/50 transition-all duration-200">

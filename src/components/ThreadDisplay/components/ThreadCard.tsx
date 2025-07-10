@@ -7,7 +7,6 @@ import { Edit, Annotation } from '@/types';
 
 export function ThreadCard({ thread, threadIndex, onThreadUpdated }: ThreadCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [editingTweetIndex, setEditingTweetIndex] = useState<number | null>(null);
 
   // Parse thread content into individual tweets, handling em-dash separators
   const tweets = thread.content
@@ -25,7 +24,6 @@ export function ThreadCard({ thread, threadIndex, onThreadUpdated }: ThreadCardP
     const originalContent = tweets[tweetIndex];
     
     if (originalContent === newContent) {
-      setEditingTweetIndex(null);
       return;
     }
 
@@ -50,7 +48,6 @@ export function ThreadCard({ thread, threadIndex, onThreadUpdated }: ThreadCardP
     };
     
     onThreadUpdated(updatedThread);
-    setEditingTweetIndex(null);
   };
 
   const handleAnnotationAdd = (annotation: string, type: Annotation['type']) => {
@@ -156,9 +153,8 @@ export function ThreadCard({ thread, threadIndex, onThreadUpdated }: ThreadCardP
                 onTweetEdited={(newContent) => handleTweetEdit(tweetIndex, newContent)}
                 onAnnotationAdded={handleAnnotationAdd}
                 annotations={thread.annotations}
-                isEditing={editingTweetIndex === tweetIndex}
-                onStartEdit={() => setEditingTweetIndex(tweetIndex)}
-                onEndEdit={() => setEditingTweetIndex(null)}
+                onStartEdit={() => {}}
+                onEndEdit={() => {}}
               />
             ))}
           </div>

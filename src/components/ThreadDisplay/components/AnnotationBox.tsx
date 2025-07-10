@@ -170,7 +170,7 @@ export function AnnotationBox({
             rows={4}
           />
           <div className="mt-2 text-xs text-gray-500">
-            Be specific about what you'd like to change and why.
+            Be specific about what you&apos;d like to change and why.
           </div>
         </div>
 

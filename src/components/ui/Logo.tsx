@@ -6,7 +6,6 @@ interface LogoProps {
   className?: string
   showText?: boolean
   textClassName?: string
-  variant?: 'default' | 'minimal' | 'glass'
 }
 
 const sizeMap = {
@@ -51,12 +50,11 @@ export function Logo({
   size = 'md', 
   className = '', 
   showText = false, 
-  textClassName = '',
-  variant = 'default'
+  textClassName = ''
 }: LogoProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
-  const { container, text, blur, borderRadius, textSize } = sizeMap[size]
+  const { container, text, textSize } = sizeMap[size]
   
   const getContainerStyles = () => {
     // Remove all circle backgrounds - just return basic container for sizing

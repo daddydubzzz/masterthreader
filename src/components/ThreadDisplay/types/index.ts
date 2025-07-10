@@ -21,7 +21,6 @@ export interface TweetProps {
   onTweetEdited: (newContent: string) => void;
   onAnnotationAdded: (annotation: string, type: Annotation['type']) => void;
   annotations: Annotation[];
-  isEditing: boolean;
   onStartEdit: () => void;
   onEndEdit: () => void;
 }

@@ -62,7 +62,6 @@ export default function Home() {
             <Logo 
               size="sm" 
               showText 
-              variant="glass"
               className="transition-all duration-300 hover:scale-105"
             />
             
