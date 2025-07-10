@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -21,17 +21,18 @@ export const metadata: Metadata = {
   description: "Transform your scripts into viral Twitter threads with Josh's AI-powered thread generation and refinement system.",
   keywords: ["twitter threads", "ai copywriting", "content creation", "social media", "thread generator"],
   authors: [{ name: "MasterThreader Team" }],
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-  },
   robots: "index, follow",
   openGraph: {
     title: "MasterThreader | AI Copy Refinement Engine",
     description: "Transform your scripts into viral Twitter threads with AI-powered generation and refinement.",
     type: "website",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({
