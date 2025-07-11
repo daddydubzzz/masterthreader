@@ -72,7 +72,7 @@ Critical formatting requirements:
 
     try {
       const response = await openai.chat.completions.create({
-        model: this.config.model || 'gpt-4',
+        model: this.config.model || 'gpt-4o',
         messages: [
           {
             role: 'system',
@@ -192,7 +192,7 @@ Respond with valid JSON:
 
     try {
       const response = await openai.chat.completions.create({
-        model: this.config.model || 'gpt-4',
+        model: this.config.model || 'gpt-4o',
         messages: [
           {
             role: 'system',
@@ -267,7 +267,7 @@ ${script}`;
 
     try {
       const response = await anthropic.messages.create({
-        model: this.config.model || 'claude-3-5-sonnet-20241022',
+        model: this.config.model || 'claude-opus-4-20250514',
         max_tokens: 4000,
         temperature: 0.3,
         messages: [
@@ -450,7 +450,7 @@ Requirements:
 
     try {
       const response = await anthropic.messages.create({
-        model: this.config.model || 'claude-3-5-sonnet-20241022',
+        model: this.config.model || 'claude-opus-4-20250514',
         max_tokens: 4000,
         temperature: 0.3,
         messages: [
@@ -512,7 +512,7 @@ export function createLLMClient(): LLMClient {
     apiKey: provider === 'openai' 
       ? process.env.OPENAI_API_KEY || ''
       : process.env.ANTHROPIC_API_KEY || '',
-    model: provider === 'openai' ? 'gpt-4' : 'claude-3-5-sonnet-20241022'
+    model: provider === 'openai' ? 'gpt-4o' : 'claude-opus-4-20250514'
   };
 
   if (!config.apiKey) {
@@ -527,4 +527,4 @@ export function createLLMClient(): LLMClient {
     default:
       throw new Error(`Unsupported LLM provider: ${provider}`);
   }
-} 
+}

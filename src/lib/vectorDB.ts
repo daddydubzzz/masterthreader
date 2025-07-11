@@ -1,6 +1,13 @@
 import { Pool } from 'pg';
 import { VectorTriple, VectorTripleQuery, SimilarTriple, RAGAnalysis } from '@/types';
 import { DatabaseError, ConfigurationError, ErrorLogger, AsyncHandler } from './errorHandling';
+import OpenAI from 'openai';
+import { openaiConfig } from './openai';
+
+// Initialize OpenAI client
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+}) : null;
 
 // Database connection pool
 let pool: Pool | null = null;
@@ -27,29 +34,22 @@ function getDBPool(): Pool {
 }
 
 // Generate embeddings using OpenAI
-async function generateEmbedding(text: string): Promise<number[]> {
+export async function generateEmbedding(text: string): Promise<number[]> {
+  if (!openai) {
+    throw new Error('OpenAI client not initialized - API key required');
+  }
+
   try {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new ConfigurationError('OpenAI API key not configured');
-    }
-
-    const OpenAI = (await import('openai')).default;
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
-
     const response = await openai.embeddings.create({
-      model: 'text-embedding-ada-002',
-      input: text,
+      model: openaiConfig.model,
+      input: text.replace(/\n/g, ' '),
+      dimensions: openaiConfig.dimensions
     });
 
     return response.data[0].embedding;
   } catch (error) {
-    ErrorLogger.logError(
-      error instanceof Error ? error : new Error(String(error)),
-      { operation: 'generateEmbedding', textLength: text.length }
-    );
-    throw error;
+    console.error('Error generating embedding:', error);
+    throw new Error('Failed to generate embedding');
   }
 }
 

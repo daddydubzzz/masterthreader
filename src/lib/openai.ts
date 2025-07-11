@@ -1,6 +1,14 @@
 import OpenAI from 'openai';
 import { Thread, MegaPrompt, RecursionPayload, RecursionResponse } from '@/types';
 
+// OpenAI Configuration
+export const openaiConfig = {
+  model: 'text-embedding-3-large',
+  dimensions: 2000, // Reduced from 3072 to work with Supabase pgvector 2000 dimension limit
+  maxRetries: 3,
+  timeout: 30000
+};
+
 // Initialize OpenAI client conditionally
 function getOpenAIClient() {
   const apiKey = process.env.OPENAI_API_KEY;

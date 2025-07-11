@@ -43,7 +43,7 @@ CREATE TABLE vector_triples (
     final_edit TEXT NOT NULL,            -- User's improved version
     script_title TEXT,                   -- Context grouping
     position_in_thread INTEGER,          -- Position context
-    embedding_vector vector(1536),       -- OpenAI embedding of full triple
+    embedding_vector vector(3072),       -- OpenAI text-embedding-3-large embedding
     quality_rating INTEGER (1-5),        -- Quality scoring (default: 3)
     resolved BOOLEAN DEFAULT FALSE       -- Incorporated into mega prompt
 );
